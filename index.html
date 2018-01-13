@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>杨明的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="杨明的博客">
+<meta property="og:url" content="http://yoursite.com/index.html">
+<meta property="og:site_name" content="杨明的博客">
+<meta property="og:locale" content="zh-Hans">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="杨明的博客">
+  
+    <link rel="alternate" href="/atom.xml" title="杨明的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">杨明的博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Suche"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-Java内存泄漏分析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/01/12/Java内存泄漏分析/" class="article-date">
+  <time datetime="2018-01-12T14:53:45.000Z" itemprop="datePublished">2018-01-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java/">Java</a>►<a class="article-category-link" href="/categories/Java/杂记/">杂记</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/01/12/Java内存泄漏分析/">Java内存泄漏分析</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="1-背景"><a href="#1-背景" class="headerlink" title="1. 背景"></a>1. 背景</h2><p>前几个星期，在做实验室图片索引的项目都时候遇到了一个bug,在使用Lucene对图片的轮廓特征进行索引的时候，在索引到几十万张图片的时候Java因为OutOfMemory崩溃。因为图片的特征从BufferReader读入后是用的ArrayList进行存储的，当时我脑海里的第一个想法：会不会是因为ArrayList存了过多的数据，导致内存溢出呢，于是我调整策略，<code>每次读入10W张图片的特征，存入ArrayList,然后commit写入索引，循环往复</code>。</p>
+<p>然而结果并不是这样，即使分为多段存入，结果内存还是会溢出，<code>难道是那个地方内存泄漏了？</code>于是我便查找资料简单了解了复习了一下Java内存泄漏的知识。并在此作为简单记录。</p>
+<h2 id="2-大纲"><a href="#2-大纲" class="headerlink" title="2. 大纲"></a>2. 大纲</h2><p>我将从以下几个方面复习Java内存泄漏相关的知识。</p>
+<ol>
+<li>Java内存泄漏的定义</li>
+<li>Java内存泄漏的原因</li>
+<li>常见Java内存泄漏的场景</li>
+<li>Java内存泄漏的监控</li>
+<li>Java内存泄漏的预防</li>
+</ol>
+<h2 id="3-Java内存泄漏的定义"><a href="#3-Java内存泄漏的定义" class="headerlink" title="3. Java内存泄漏的定义"></a>3. Java内存泄漏的定义</h2><p>定义</p>
+<blockquote>
+<p>不再会被使用的对象的内存不能被回收，就是内存泄露。<br>Java中的内存泄露与C++中的表现有所不同。<br>在C++中，所有被分配了内存的对象，不再使用后，都必须程序员手动的释放他们。所以，每个类，都会含有一个析构函数，作用就是完成清理工作，如果我们忘记了某些对象的释放，就会造成内存泄露。<br>但是在Java中，我们不用（也没办法）自己释放内存，无用的对象由GC自动清理，这也极大的简化了我们的编程工作。但，实际有时候一些不再会被使用的对象，在GC看来不能被释放，就会造成内存泄露</p>
+</blockquote>
+<p>Java和c++有一个较大的区别就是，Java自带的垃圾回收器能够帮助我们管理内存，但不代表垃圾回收器能回收一切“垃圾”，如果我们程序使用不当，就可能导致我们预期中能够释放的空间无法得到释放，比如如下程序就可能导致内存泄漏。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addObjects</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    List&lt;Object&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; i++) &#123;</span><br><span class="line">        Object obj = <span class="keyword">new</span> Object();</span><br><span class="line">        list.add(obj):</span><br><span class="line">        obj = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>虽然我们已经把obj置为null，但由于list仍然持有obj在堆区相应的引用，堆区的内存仍然无法释放。</p>
+<h2 id="4-Java内存泄漏的原因"><a href="#4-Java内存泄漏的原因" class="headerlink" title="4. Java内存泄漏的原因"></a>4. Java内存泄漏的原因</h2><p>通常，会认为在堆上分配对象的代价比较大，但是GC却优化了这一操作：C++中，在堆上分配一块内存，会查找一块适用的内存加以分配，如果对象销毁，这块内存就可以重用；而Java中，就想一条长的带子，每分配一个新的对象，Java的“堆指针”就向后移动到尚未分配的区域。所以，Java分配内存的效率，可与C++媲美。<br>Java使用有向图对内存进行管理，如下图所示：</p>
+<p><img src="/images/15158097999402.jpg" alt=""></p>
+<p>如果一个对象不在被其他对象引用，被称为不可达，反之被称为不可达。图中obj1就是可达的，obj2就是不可达的。显然obj2是需要被回收的。<br>gc清理采用引用计数方式：当引用连接至新对象时，引用计数+1；当某个引用离开作用域或被设置为null时，引用计数-1，GC发现这个计数为0时，就回收其占用的内存。这个开销会在引用程序的整个生命周期发生，并且不能处理循环引用的情况。所以这种方式只是用来说明GC的工作方式，而不会被任何一种Java虚拟机应用。<br>但是往往由于我们代码的问题，使得堆区中我们不想要的对象无法得到有效释放。比如之前举的例子，因此便产生了内存泄漏。</p>
+<h2 id="5-内存泄漏的场景"><a href="#5-内存泄漏的场景" class="headerlink" title="5. 内存泄漏的场景"></a>5. 内存泄漏的场景</h2><ul>
+<li><p>容器类的使用<br>比如ArrayList、HashMap等</p>
+</li>
+<li><p>长链接的使用<br>比如数据库连接、网络连接、IO等</p>
+</li>
+<li><p>静态资源等使用<br>比如单例模式等使用。比如下面的例子</p>
+</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">A</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">A</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        B.getInstance().setA(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//B类采用单例模式</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">B</span></span>&#123;</span><br><span class="line">    <span class="keyword">private</span> A a;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> B instance = <span class="keyword">new</span> B();</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">B</span><span class="params">()</span></span>&#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> B <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> instance;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setA</span><span class="params">(A a)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.a = a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> A <span class="title">getA</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> a;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>内部类与外部模块的引用</li>
+</ul>
+<h2 id="6-Java内存泄漏的监控"><a href="#6-Java内存泄漏的监控" class="headerlink" title="6. Java内存泄漏的监控"></a>6. Java内存泄漏的监控</h2><p>目前，我们通常使用一些工具来检查Java程序的内存泄漏问题。市场上已有几种专业检查Java内存泄漏的工具，它们的基本工作原理大同小异，都是通过监测Java程序运行时，所有对象的申请、释放等动作，将内存管理的所有信息进行统计、分析、可视化。开发人员将根据这些信息判断程序是否有内存泄漏问题。这些工具包括Optimizeit Profiler，JProbe Profiler，JinSight , Rational 公司的Purify等。</p>
+<h2 id="7-Java内存泄漏的预防"><a href="#7-Java内存泄漏的预防" class="headerlink" title="7. Java内存泄漏的预防"></a>7. Java内存泄漏的预防</h2><ul>
+<li>在写程序的时候时刻关注申请的对象能否被正确释放或者回收，尤其是在之前提到的容易发生内存泄漏的场景下</li>
+<li>进行大容量测试，找出隐藏的内存泄漏。</li>
+<li>使用内存监控工具</li>
+</ul>
+<h2 id="8-参考文章"><a href="#8-参考文章" class="headerlink" title="8. 参考文章"></a>8. 参考文章</h2><ul>
+<li><a href="http://blog.csdn.net/anxpp/article/details/51325838" target="_blank" rel="noopener"> JAVA 内存泄露详解（原因、例子及解决）</a></li>
+<li><a href="https://www.jianshu.com/p/54b5da7c6816" target="_blank" rel="noopener">Java内存泄漏分析和解决</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/java/l-JavaMemoryLeak/" target="_blank" rel="noopener">Java的内存泄漏</a></li>
+<li><a href="http://blog.csdn.net/gzh0222/article/details/8538727" target="_blank" rel="noopener">java内存泄漏的定位与分析</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2018/01/12/Java内存泄漏分析/" data-id="cjccsfmz90006lq39v533rl77" class="article-share-link">Teilen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/">Java</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/01/12/hello-world/" class="article-date">
+  <time datetime="2018-01-12T14:52:51.927Z" itemprop="datePublished">2018-01-12</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/01/12/hello-world/">Hello World</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p><img src="images/15153361231345.png" alt=""></p>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a><br><img src="images/15153361231345.png" alt=""></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2018/01/12/hello-world/" data-id="cjccsfmzn0015lq39nuqu7ocv" class="article-share-link">Teilen</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-记一次Lucene中文分词器SmartChineseAnalyzer的源码探究" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/" class="article-date">
+  <time datetime="2017-12-05T12:50:34.000Z" itemprop="datePublished">2017-12-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/杂谈/">杂谈</a>►<a class="article-category-link" href="/categories/杂谈/Lucene/">Lucene</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/">记一次Lucene中文分词器SmartChineseAnalyzer的源码探究</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!<br>问题如下<br></p>
+<h2 id="初步想法"><a href="#初步想法" class="headerlink" title="初步想法"></a>初步想法</h2><p>看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有想像中的简单)…</p>
+<p>为了证明我的想法，我特意找到了Lucene7.1 SmartChineseAnalyzer的官方文档…然后看到了</p>
+
+<p>哈哈，果然用了停用词表，果断写代码验证，并且把默认停用词表关了，看看效果…</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    StringReader reader = new StringReader(&quot;人生苦短_我用Python&quot;);</span><br><span class="line">    SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer(false);</span><br><span class="line">    try &#123;</span><br><span class="line">        AnalyzerUtil.displayTokens(analyzer.tokenStream(&quot;content&quot;, reader));</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结果如下</p>
+
+<p>可以看到，下划线的当做逗号了…初步想法失败…</p>
+<h2 id="二次尝试"><a href="#二次尝试" class="headerlink" title="二次尝试"></a>二次尝试</h2><p>嗯…居然失败了…看来把问题想简单了，到那时哥好歹也是看过《Lucene in Action》的人，对Lucene的Analyzer基本原理算是略知一二，是时候展（zhuang）现（bi）真正的实力了。</p>
+<p>我们知道，Lucene的分析器一般会采用了一套分析链的机制进行分析，一般先经过reader读取字符串，然后经过tokenizer进行分词（分成一个个token），然后经过若干TokenFilter进行过滤（这里的过滤不一定要删减token，比如同义词扩展就可以使用filter进行）。</p>
+<p>那么问题到底出在哪儿呢…</p>
+<p>google了一大堆资料，发现没人提相关问题，而且版本都很老。没办法，只能祭出源码查看大法了…</p>
+<h2 id="源码探究之旅"><a href="#源码探究之旅" class="headerlink" title="源码探究之旅"></a>源码探究之旅</h2><p>要看源码其实我是拒绝的，因为不知道其原理，而且我自己查看源码的经验不是特别丰富…我一直认为，要查看别人写的代码，最好先知道人家代码大体的实现思路，了解关键的API，然后由简到繁。而不是一头扎进去，死扣细节，最后淹没在代码的海洋里。</p>
+<p>为了了解SmartChineseAnalyzer的大概实现原理，我找到了其官方文档的描述。</p>
+<blockquote><p>SmartChineseAnalyzer is an analyzer for Chinese or mixed Chinese-English text. The analyzer uses probabilistic knowledge to find the optimal word segmentation for Simplified Chinese text. The text is first broken into sentences, then each sentence is segmented into words.</p>
+<p>Segmentation is based upon the Hidden Markov Model. A large training corpus was used to calculate Chinese word frequency probability.</p>
+<p>This analyzer requires a dictionary to provide statistical data. SmartChineseAnalyzer has an included dictionary out-of-box.</p>
+<footer><strong>https://lucene.apache.org/core/7_1_0/analyzers-smartcn/org/apache/lucene/analysis/cn/smart/SmartChineseAnalyzer.html</strong></footer></blockquote>
+<p>其实官方描述也写得比较粗略，google了一些资料，大多都将算法原理，代码解析很少。算了，先大概看看源码吧。。。</p>
+<h2 id="未完待续"><a href="#未完待续" class="headerlink" title="未完待续"></a>未完待续</h2>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/" data-id="cjccsfmzm0014lq39i5zbusfb" class="article-share-link">Teilen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Lucene/">Lucene</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/搜索引擎/">搜索引擎</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/杂谈/">杂谈</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-设计模式-装饰器模式" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/09/25/设计模式-装饰器模式/" class="article-date">
+  <time datetime="2017-09-25T03:45:28.000Z" itemprop="datePublished">2017-09-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/设计模式/">设计模式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/25/设计模式-装饰器模式/">设计模式-装饰器模式</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>装饰器模式一种动态地往一个类中添加新的行为的设计模式。就功能而言，修饰模式相比生成子类更为灵活，这样可以给某个对象而不是整个类添加一些功能。</p>
+<p>一般来说，我们想给某个类或者对象添加行为有两种方式：继承方式，组合方式。装饰器模式使用的是组合方式。</p>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>首先看下装饰器模式的UML图<br></p>
+<p>可以看到，装饰器模式主要有</p>
+<ul>
+<li>抽象被装饰组件</li>
+<li>具体被装饰组件</li>
+<li>抽象装饰类</li>
+<li>具体装饰类</li>
+</ul>
+<p>下面我将以煎饼的代码为例子，演示装饰器模式<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 抽象组件：煎饼</span><br><span class="line"> */</span><br><span class="line">public interface JianBing &#123;</span><br><span class="line">  JianBing make();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 具体组件：杨氏煎饼</span><br><span class="line"> */</span><br><span class="line">public class YangShiJianBing implements JianBing &#123;</span><br><span class="line">  public JianBing make() &#123;</span><br><span class="line">    System.out.println(&quot;杨式煎饼&quot;);</span><br><span class="line">    return this;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 抽象装饰器：调料</span><br><span class="line"> */</span><br><span class="line">public AbstractClass TiaoLiao implements JianBing&#123;</span><br><span class="line">  protected JianBing jianbing;</span><br><span class="line"></span><br><span class="line">  public TiaoLiao(JianBing jianbing) &#123;</span><br><span class="line">    this.jianbing = jianbing;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public JianBing make() &#123;</span><br><span class="line">    jianbing.make();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 具体装饰器：加孜然</span><br><span class="line"> */</span><br><span class="line">public class AddZiRan extends TiaoLiao &#123;</span><br><span class="line">  public AddZiRan (JianBing jianbing) &#123;</span><br><span class="line">    super(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public JianBing make() &#123;</span><br><span class="line">    jianbing.make();</span><br><span class="line">    addZiRan(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void addZiRan(JianBing jianbing) &#123;</span><br><span class="line">    System.out.println(&quot; 加孜然 &quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 具体装饰器：加辣</span><br><span class="line"> */</span><br><span class="line">public class AddPepper extends TiaoLiao &#123;</span><br><span class="line">  public AddPepper (JianBing jianbing) &#123;</span><br><span class="line">    super(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public JianBing make() &#123;</span><br><span class="line">    jianbing.make();</span><br><span class="line">    addPepper(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void addPepper(JianBing jianbing) &#123;</span><br><span class="line">    System.out.println(&quot; 加辣 &quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 客户</span><br><span class="line"> **/</span><br><span class="line"></span><br><span class="line">public class Client &#123;</span><br><span class="line">  public static void main(String[] args) &#123;</span><br><span class="line">    // 煎饼 加孜然 加辣</span><br><span class="line">    JianBing jianbing = new YangShiJianBing();</span><br><span class="line">    JianBing jianBingAddPepper = new AddPepper(jianbing);</span><br><span class="line">    JianBing jianBingAddZiRan = new AddZiRan(jianBingAddPepper);</span><br><span class="line">    jianBingAddZiRan.make();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，使用了装饰器模式之后，我们可以动态（甚至递归）地给组件（煎饼）添加需要的行为（调料），很棒。这和代理模式有本质的区别。</p>
+<h2 id="装饰器模式的实例"><a href="#装饰器模式的实例" class="headerlink" title="装饰器模式的实例"></a>装饰器模式的实例</h2><p>一个比较著名的例子是Java的I/O标准库的设计，其部分如下所示</p>
+
+<p>根据上图可以看出：</p>
+<ul>
+<li>抽象构建角色(Component)：由InputStream扮演。这是一个抽象类，为各种子类型提供统一的接口。</li>
+<li>具体构件角色(ConcreteComponent)：由ByteArrayInputStream、FileInputStream、StringBufferInputStream等类扮演。它们实现了抽象构件角色所规定的接口。</li>
+<li>抽象装饰角色(Decorator)：由FilterInputStream、ObectInputStream等类扮演。它们实现了InputStream所规定的接口。</li>
+<li>具体装饰角色(ConcreteDecorator)：由几个类扮演，分别是BufferedInputStream、DataInputStream以及两个不常用到的类LineNumberInputStream、PushbackInputStream。</li>
+</ul>
+<h2 id="装饰器模式的优点"><a href="#装饰器模式的优点" class="headerlink" title="装饰器模式的优点"></a>装饰器模式的优点</h2><p>装饰模式与继承关系的目的都是要扩展对象的功能，但是装饰模式可以提供比继承更多的灵活性。通过使用不同的具体装饰类以及这些装饰类的排列组合，可以创造出很多不同行为的组合。可以使用多个具体装饰类来装饰同一对象，得到功能更为强大的对象。</p>
+<h2 id="装饰器模式的缺点"><a href="#装饰器模式的缺点" class="headerlink" title="装饰器模式的缺点"></a>装饰器模式的缺点</h2><p>这种比继承更加灵活机动的特性，也同时意味着装饰模式比继承更加易于出错，排错也很困难，对于多次装饰的对象，调试时寻找错误可能需要逐级排查，较为烦琐。</p>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><ul>
+<li><a href="https://zh.wikipedia.org/wiki/%E4%BF%AE%E9%A5%B0%E6%A8%A1%E5%BC%8F" target="_blank" rel="noopener">修饰模式-维基百科</a></li>
+<li><a href="http://design-patterns.readthedocs.io/zh_CN/latest/structural_patterns/decorator.html" target="_blank" rel="noopener">装饰模式</a></li>
+<li><a href="http://www.jianshu.com/p/d80b6b4b76fc" target="_blank" rel="noopener">java设计模式－装饰器模式(Decorator)-步积</a></li>
+<li><a href="http://www.runoob.com/design-pattern/decorator-pattern.html" target="_blank" rel="noopener">装饰器模式-RUNOOB.COM</a></li>
+<li><a href="http://dreamrunner.org/blog/2014/05/03/%E6%B5%85%E8%B0%88%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F3/" target="_blank" rel="noopener">浅谈设计模式三: 装饰器模式(Decorator)</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/09/25/设计模式-装饰器模式/" data-id="cjccsfmza0009lq39rs32x8ws" class="article-share-link">Teilen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/装饰器模式/">装饰器模式</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/设计模式/">设计模式</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-设计模式-工厂模式" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/09/21/设计模式-工厂模式/" class="article-date">
+  <time datetime="2017-09-21T14:12:09.000Z" itemprop="datePublished">2017-09-21</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/设计模式/">设计模式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/21/设计模式-工厂模式/">设计模式-工厂模式</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>先照搬书上工厂模式的定义，即定义一个用于创建对象的接口，让子类决定实例化哪一个类，工厂方法使一个类的实例化延迟到其子类。工厂模式一共有三个小分类，分别是：简单工厂模式，工厂方法模式和抽象工厂模式。使用工厂模式一定有他的好处，那么具体好处是啥呢？我认为3个工厂模式有不同的好处，当然他们也不是完美无缺的。下面我们简单介绍3类工厂模式。</p>
+<h2 id="简单工厂模式"><a href="#简单工厂模式" class="headerlink" title="简单工厂模式"></a>简单工厂模式</h2><p>通过一个工厂，产生不同的产品。如下代码所示。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 产品接口</span><br><span class="line"> */</span><br><span class="line">public interface Product &#123;</span><br><span class="line">  void use();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * A产品</span><br><span class="line"> */</span><br><span class="line">public class ProductA implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductA&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * B产品</span><br><span class="line"> */</span><br><span class="line">public class ProductB implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductB&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 简单工厂</span><br><span class="line"> */</span><br><span class="line">public class Factory &#123;</span><br><span class="line">  public Product createProduct(String category) &#123;</span><br><span class="line">    switch(category) &#123;</span><br><span class="line">      case &quot;A&quot;:</span><br><span class="line">        return new ProductA();</span><br><span class="line">      case &quot;B&quot;:</span><br><span class="line">        return new ProductB();</span><br><span class="line">      default:</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过工厂类，客户可以根据不同的参数，就能“拿到”想要的产品，不用自己生产一个。</p>
+<h3 id="简单工厂实际应用举例"><a href="#简单工厂实际应用举例" class="headerlink" title="简单工厂实际应用举例"></a>简单工厂实际应用举例</h3><ul>
+<li><p>JDK类库中广泛使用了简单工厂模式<br>如工具类java.text.DateFormat，它用于格式化一个本地日期或者时间。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public final static DateFormat getDateInstance();</span><br><span class="line">public final static DateFormat getDateInstance(int style);</span><br><span class="line">public final static DateFormat getDateInstance(int style,Locale</span><br><span class="line">locale);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Java加密技术<br>获取不同加密算法的密钥生成器:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">KeyGenerator keyGen=KeyGenerator.getInstance(&quot;DESede&quot;);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="简单工厂模式的优点"><a href="#简单工厂模式的优点" class="headerlink" title="简单工厂模式的优点"></a>简单工厂模式的优点</h3><ul>
+<li>将对象的创建和使用分离，客户不用关心产品的实例化细节，起到了责任分割和降低耦合的作用。</li>
+</ul>
+<h3 id="简单工厂模式的缺点"><a href="#简单工厂模式的缺点" class="headerlink" title="简单工厂模式的缺点"></a>简单工厂模式的缺点</h3><ul>
+<li>每增加一种产品，就要修改工厂的逻辑，在产品数量众多，且类型复杂的情况下，可能难以修改和维护。</li>
+<li>工厂负责所有产品的创建，责任重大，一旦不能正常工作，整个系统就无法正常工作。</li>
+</ul>
+<h3 id="简单工厂适用场景"><a href="#简单工厂适用场景" class="headerlink" title="简单工厂适用场景"></a>简单工厂适用场景</h3><p>产品种类较少时，或者客户只知道产品种类的参数，并不关心如何产生的情况下，可以使用简单工厂模式。</p>
+<h2 id="工厂方法模式"><a href="#工厂方法模式" class="headerlink" title="工厂方法模式"></a>工厂方法模式</h2><p>工厂方法模式不再使用一个工厂完成所有产品的生产，而是由特定工厂负责特定产品的生产，当我们需要新增某类产品的时候，只需要实现对应产品的生产工厂，然后客户端调用对应的工厂生产即可。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 产品接口</span><br><span class="line"> */</span><br><span class="line">public interface Product &#123;</span><br><span class="line">  void use();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 工厂接口</span><br><span class="line"> */</span><br><span class="line">public interface Factory &#123;</span><br><span class="line">  Product createProduct();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * A产品</span><br><span class="line"> */</span><br><span class="line">public class ProductA implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductA&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * B产品</span><br><span class="line"> */</span><br><span class="line">public class ProductB implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductB&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * A产品工厂</span><br><span class="line"> */</span><br><span class="line">public class FactoryA implements Factory &#123;</span><br><span class="line">  public ProductA createProduct() &#123;</span><br><span class="line">    return new ProductA();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * B产品工厂</span><br><span class="line"> */</span><br><span class="line">public class FactoryB implements Factory&#123;</span><br><span class="line">  public Product createProduct() &#123;</span><br><span class="line">    return new ProductB();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="工厂方法模式的优点"><a href="#工厂方法模式的优点" class="headerlink" title="工厂方法模式的优点"></a>工厂方法模式的优点</h3><h3 id="工厂方法模式的缺点"><a href="#工厂方法模式的缺点" class="headerlink" title="工厂方法模式的缺点"></a>工厂方法模式的缺点</h3><h3 id="工厂方法模式的实际应用举例"><a href="#工厂方法模式的实际应用举例" class="headerlink" title="工厂方法模式的实际应用举例"></a>工厂方法模式的实际应用举例</h3><ul>
+<li><p>日志记录器<br>某系统日志记录器要求支持多种日志记录方式，如文件记录、数据库记录等，且用户可以根据要求动态选择日志记录方式， 现使用工厂方法模式设计该系统。</p>
+
+<ul>
+<li>JDBC中的工厂方法<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Connection conn=DriverManager.getConnection(&quot;jdbc:microsoft:sqlserver://loc</span><br><span class="line">alhost:1433; DatabaseName=DB;user=sa;password=&quot;);</span><br><span class="line">Statement statement=conn.createStatement();</span><br><span class="line">ResultSet rs=statement.executeQuery(&quot;select * from UserInfo&quot;);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="工厂方法模式的优点-1"><a href="#工厂方法模式的优点-1" class="headerlink" title="工厂方法模式的优点"></a>工厂方法模式的优点</h3><ul>
+<li>向客户隐藏了哪种具体产品类将被实例化这一细节，用户只需要关心所需产品对应的工厂，无须关心创建细节，甚至无须知道具体产品类的类名。降低了耦合度封装了变化。</li>
+<li>增加新产品时，无须修改其他的具体工厂和具体产品，只需要增加具体产品以及具体生产工厂即可。符合“开闭原则”。</li>
+</ul>
+<h3 id="工厂方法模式的缺点-1"><a href="#工厂方法模式的缺点-1" class="headerlink" title="工厂方法模式的缺点"></a>工厂方法模式的缺点</h3><ul>
+<li>据说是：每增加一个产品就需要编写相关的工厂类，系统类的个数增加，增加系统复杂度，和编译速度。（本人不太同意这个观点。。。）</li>
+</ul>
+<h2 id="抽象工厂模式"><a href="#抽象工厂模式" class="headerlink" title="抽象工厂模式"></a>抽象工厂模式</h2><p>为了更清晰地理解工厂方法模式，需要先引入两个概念：</p>
+<ul>
+<li>产品等级结构<br>产品等级结构即产品的继承结构，如一个抽象类是电视机，其子类有海尔电视机、海信电视机、TCL电视机，则抽象电视机与具体品牌的电视机之间构成了一个产品等级结构，抽象电视机是父类，而具体品牌的电视机是其子类。</li>
+<li>产品族<br>在抽象工厂模式中，产品族是指由同一个工厂生产的，位于不同产品等级结构中的一组产品，如海尔电器工厂生产的海尔电视机、海尔电冰箱，海尔电视机位于电视机产品等级结构中，海尔电冰箱位于电冰箱产品等级结构中。</li>
+</ul>
+<p>在工厂方法模式中，某一个具体工厂负责某一个具体的产品。但是现实中，我们可能需要某一个工厂负责某生产一个产品族的产品。这时使用抽象工厂会比较合适。这里我们使用UML图来表示抽象抽象工厂模式</p>
+
+<h3 id="抽象工厂的实际使用"><a href="#抽象工厂的实际使用" class="headerlink" title="抽象工厂的实际使用"></a>抽象工厂的实际使用</h3><ul>
+<li>情景模式的实现<br>比如黑夜模式下，需要对UI界面的多个元素就行修改，这时可以使用抽象共产模式</li>
+</ul>
+<h3 id="抽象工厂的优点"><a href="#抽象工厂的优点" class="headerlink" title="抽象工厂的优点"></a>抽象工厂的优点</h3><ul>
+<li>抽象工厂模式隔离了具体类的生成，使得客户并不需要知道什么被创建。</li>
+<li>当一个产品族中的多个对象被设计成一起工作时，它能够保证客户端始终只使用同一个产品族中的对象。这对一些需要根据当前环境来决定其行为的软件系统来说，是一种非常实用的设计模式。</li>
+<li>增加新的具体工厂和产品族很方便（但是增加新的产品等级结构麻烦）</li>
+</ul>
+<h3 id="抽象工厂的缺点"><a href="#抽象工厂的缺点" class="headerlink" title="抽象工厂的缺点"></a>抽象工厂的缺点</h3><ul>
+<li><p>在添加新的产品对象时，难以扩展抽象工厂来生产新种类的产品，这是因为在抽象工厂角色中规定了所有可能被创建的产品集合，要支持新种类的产品就意味着要对该接口进行扩展，而这将涉及到对抽象工厂角色及其所有子类的修改，显然会带来较大的不便。</p>
+</li>
+<li><p>开闭原则的倾斜性（增加新的工厂和产品族容易，增加新的产品等级结构麻烦）。</p>
+</li>
+</ul>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><ul>
+<li><a href="http://design-patterns.readthedocs.io/zh_CN/latest/creational_patterns/simple_factory.html" target="_blank" rel="noopener">简单工厂模式</a></li>
+<li><a href="http://design-patterns.readthedocs.io/zh_CN/latest/creational_patterns/factory_method.html" target="_blank" rel="noopener">工厂方法模式</a></li>
+<li><a href="http://design-patterns.readthedocs.io/zh_CN/latest/creational_patterns/abstract_factory.html" target="_blank" rel="noopener">抽象工厂模式</a></li>
+<li><a href="http://design-patterns.readthedocs.io/zh_CN/latest/creational_patterns/abstract_factory.html" target="_blank" rel="noopener">工厂方法模式-极客学院</a></li>
+<li><a href="http://www.runoob.com/design-pattern/factory-pattern.html" target="_blank" rel="noopener">工厂模式-RUNOOB.COM</a></li>
+<li><a href="http://www.cnblogs.com/zhouqiang/archive/2012/07/20/2601365.html" target="_blank" rel="noopener">Java设计模式——工厂设计模式</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/09/21/设计模式-工厂模式/" data-id="cjccsfmz80005lq3921ty3393" class="article-share-link">Teilen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/工厂模式/">工厂模式</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/设计模式/">设计模式</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-设计模式-单例模式" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/09/20/设计模式-单例模式/" class="article-date">
+  <time datetime="2017-09-20T07:12:33.000Z" itemprop="datePublished">2017-09-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/设计模式/">设计模式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/20/设计模式-单例模式/">设计模式-并不简单的单例模式</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>有时候我们在写程序的时候，我们希望在全局共用一个对象。比如一个负责读取全局配置文件的类A，读取一次配置文件之后，使用单例模式，我们可以得到一个全局唯一的对象a，其他对象读取配置时就不用重复实例化类A，并重复读取配置文件了。<br>总之，单例模式保证了某个类全局只存在一个实例。</p>
+<p>单例模式的实现一般可以分为以下几类</p>
+<ul>
+<li>懒汉式（非线程安全）</li>
+<li>懒汉式（线程安全）</li>
+<li>饿汉式</li>
+<li>双重检查锁</li>
+<li>静态内部类</li>
+<li>枚举</li>
+</ul>
+<p>下面简要介绍上述实现方法</p>
+<h2 id="懒汉式（非线程安全）"><a href="#懒汉式（非线程安全）" class="headerlink" title="懒汉式（非线程安全）"></a>懒汉式（非线程安全）</h2><p>先上代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 懒汉模式，非线程安全</span><br><span class="line"> */</span><br><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line"></span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      instance = new SingleTon();</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>懒汉模式只所以叫懒汉，是因为他使用了“惰性加载（Lazy Initialization）”的思想(好吧，这是我瞎猜的)<br>为了防止单例类被其他类new出来，我们将单例类的构造函数设为private。在单线程模式下，这个单例是可用的，但是一旦在多线程的情况下，可能会有多个线程进入if语句，导致单例产生多个实例。</p>
+<p>总之，该实现方式使用了惰性加载技术，但是非线程安全，不推荐使用。</p>
+<h2 id="懒汉式（线程安全）"><a href="#懒汉式（线程安全）" class="headerlink" title="懒汉式（线程安全）"></a>懒汉式（线程安全）</h2><p>在之前的基础上，为了保证懒汉式单例模式的线程安全，我们利用Java的synchronized关键字保证其线程安全。其代码如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line">  public static synchronized getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      instance = new SingleTon();</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>使用了synchronized关键字对getInstance方法修饰后，我们保证了懒汉式的线程安全性。但是该模式存在一个致命的问题，那就是性能问题。</p>
+<p>假设SingleTon类的instance已经被实例化了，如果有多个线程调用getInstance时，只有一个线程能获得锁，其他线程都不得不等待，这会影响系统的性能。</p>
+<p>总之，线程安全的懒汉式同样使用了惰性加载技术，并且是线程安全的，但是并发性能并不是很好。那么怎么解决这个问题，并能保证线程安全和使用懒加载呢？答案是“双重检验锁”。</p>
+<h2 id="双重检验锁"><a href="#双重检验锁" class="headerlink" title="双重检验锁"></a>双重检验锁</h2><p>先看代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      synchronized(SingleTon.class) &#123;</span><br><span class="line">        if (instance == null) &#123;</span><br><span class="line">          instance = new SingleTon();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如上面代码所示，如果第一次检查instance不为null，那么就不需要执行下面的加锁和初始化操作。因此可以大幅降低synchronized带来的性能开销。</p>
+<p>看似这段代码可以很好的实现单例模式了，但是这段代码有一个隐藏的BUG。原因在instance = new SingleTon()这句话，因为JVM在执行这句代码的时候，大概进行了以下3个步骤：</p>
+<ol>
+<li>为SingleTon分配内存。</li>
+<li>调用SingleTon的构造函数进行初始化。</li>
+<li>将instance指针指向分配好的地址。<br>理想执行顺序是1-&gt;2-&gt;3，之前的代码不会有问题。然而由于某些JIT编译器存在指令重排序，可能会出现1-&gt;3-&gt;2的指令执行顺序，这时可能会导致线程1执行完3以后，另外一个线程抢占使用instance，那么就会出现错误。</li>
+</ol>
+<p>解决这个问题的办法很简单，只需要将 instance 变量声明成 volatile 就可以了。<br>volatileu关键字有两个功能：</p>
+<ol>
+<li>保证变量的内存可见性</li>
+<li>局部阻止重排序的发生<br>这里我们用到了第二个功能，保证了单例模式的正常实现。修改后的代码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon &#123;</span><br><span class="line">  private volatile static SingleTon instance;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      synchronized(SingleTon.class) &#123;</span><br><span class="line">        if (instance == null) &#123;</span><br><span class="line">          instance = new SingleTon();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>通过上面的代码，我们就可以愉快地使用单例模式了。这是一种比较线程安全且用到了惰性加载技术的单例模式实现方法。</p>
+<h2 id="饿汉模式"><a href="#饿汉模式" class="headerlink" title="饿汉模式"></a>饿汉模式</h2><p>这里介绍另外一种不适用惰性加载技术的单例模式实现方法，不使用惰性加载之后，代码也变得简洁了许多。代码如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static final SingleTon instance = new SingleTon();</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，这种单例模式在类加载期间就会初始化instance实例，JVM会保证多个线程初始化一个类的时候只有一个类执行，所以我们不用担心线程安全问题。</p>
+<h2 id="静态内部类方法"><a href="#静态内部类方法" class="headerlink" title="静态内部类方法"></a>静态内部类方法</h2><p>代码如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public class Singleton &#123;  </span><br><span class="line">    private static class SingletonHolder &#123;  </span><br><span class="line">        private static final Singleton INSTANCE = new Singleton();  </span><br><span class="line">    &#125;  </span><br><span class="line">    private Singleton ()&#123;&#125;  </span><br><span class="line">    public static final Singleton getInstance() &#123;  </span><br><span class="line">        return SingletonHolder.INSTANCE;</span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>原理同饿汉式类似，不在啰嗦。</p>
+<h2 id="枚举类方法"><a href="#枚举类方法" class="headerlink" title="枚举类方法"></a>枚举类方法</h2><p>Java自身的枚举类能够保证全局只存在有限个实例，并能线程安全的访问。代码也非常简洁。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public enum SingleTon() &#123;</span><br><span class="line">  INSTANCE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文，我们介绍了6种单例模式的实现方法，我们可以根据不同的业务场景来实现单例模式。当然，实现单例模式的时候我们不光关注惰性加载和线程安全，序列化反序列化问题也是单例模式的一个问题，且看下回分解。</p>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><ul>
+<li><p><a href="http://wuchong.me/blog/2014/08/28/how-to-correctly-write-singleton-pattern/" target="_blank" rel="noopener">如何正确地写出单例模式</a></p>
+</li>
+<li><p><a href="http://www.infoq.com/cn/articles/double-checked-locking-with-delay-initialization" target="_blank" rel="noopener">双重检查锁定与延迟初始化</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/t894690230/article/details/50588129" target="_blank" rel="noopener">volatile关键字作用与内存可见性、指令重排序概述</a></p>
+</li>
+<li><p><a href="http://www.importnew.com/18872.html" target="_blank" rel="noopener">你真的会写单例模式吗——Java实现</a></p>
+</li>
+<li><p><a href="https://zh.wikipedia.org/zh-hans/单例模式" target="_blank" rel="noopener">单例模式- 维基百科，自由的百科全书</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/09/20/设计模式-单例模式/" data-id="cjccsfmz70004lq39gq4szens" class="article-share-link">Teilen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/单例模式/">单例模式</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/设计模式/">设计模式</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Java虚拟机-Java内存区域简介" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/09/19/Java虚拟机-Java内存区域简介/" class="article-date">
+  <time datetime="2017-09-19T01:12:26.000Z" itemprop="datePublished">2017-09-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java虚拟机/">Java虚拟机</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/19/Java虚拟机-Java内存区域简介/">Java虚拟机-Java运行时数据区</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示<br></p>
+<h1 id="2-运行时数据区"><a href="#2-运行时数据区" class="headerlink" title="2. 运行时数据区"></a>2. 运行时数据区</h1><p>如上图所示，大体上我们可以把Java内存区域划分为方法区，堆区，Java虚拟机栈，本地方法栈，程序计数器。还有一个直接内存（DirectMemory, 也称堆外内存，它不属于运行时数据区的内容，使用过NIO的同学可能了解过）下面简要说明各个数据区域。</p>
+<h2 id="2-2-堆区"><a href="#2-2-堆区" class="headerlink" title="2.2 堆区"></a>2.2 堆区</h2><p>堆区(Java Heap)最大的作用就是存放对象实例，但是并不是所有对象一定要存放到堆上，随着JIT技术和逃逸分析技术的发展，对象可以存放到栈上。</p>
+<p>堆区被所有线程共享。</p>
+<p>堆区不一定要分配在物理连续的内存中，只要其逻辑连续即可。</p>
+<p>当堆区没有足够内存完成实例分配时，并且堆无法扩展时，将会抛出OutOfMemoryError异常。</p>
+<p>谈到堆区时，就不得不提到垃圾回收技术，堆区是垃圾回收器管理的主要区域，因此也被称为GC堆。不同的垃圾回收算法会把堆区划分为各个不同的区域，比如新生代和老年代，具体细节将在垃圾回收算法部分详解。</p>
+<h2 id="2-3-方法区（静态区）"><a href="#2-3-方法区（静态区）" class="headerlink" title="2.3 方法区（静态区）"></a>2.3 方法区（静态区）</h2><p>方法区（Method Area）用于存储已被JVM加载的<strong>类信息、常量、静态变量、即时编译器编译后的代码</strong>等数据。当我们创建对象实例后，对象的类型信息存储在方法堆之中，实例数据存放在堆中；实例数据指的是在 Java 中创建的各种实例对象以及它们的值，类型信息指的是定义在 Java 代码中的常量、静态变量、以及在类中声明的各种方法、方法字段等等；同时可能包括即时编译器编译后产生的代码数据。</p>
+<p>方法区被所有线程共享。</p>
+<p>注意HotSpot虚拟机在实现时，将方法区的实现在堆区的永久代实现，因此有时候将方法区看作永久代的一部分。</p>
+<h3 id="2-3-1-运行时常量池"><a href="#2-3-1-运行时常量池" class="headerlink" title="2.3.1 运行时常量池"></a>2.3.1 运行时常量池</h3><p>用于存放编译期生成的各种字面量和符号引用，这部分内容将在类加载后进入方法区的运行时常量池中存放。</p>
+<h2 id="2-4-Java虚拟机栈"><a href="#2-4-Java虚拟机栈" class="headerlink" title="2.4 Java虚拟机栈"></a>2.4 Java虚拟机栈</h2><p>Java虚拟机栈(Java Virtual Machine Stack)由若干个Java虚拟机栈帧（Stack Frame）组成，而栈帧是JVM方法调用和方法执行的数据结构，每一个方法的调用和返回都对应着栈帧入栈出栈的过程。栈顶的栈帧称为当前栈帧（Current Stack Frame），对应当前方法。</p>
+<p>每一个栈帧主要由局部变量表，操作数栈，动态链接和返回地址和栈帧信息构成。</p>
+<h3 id="2-4-1-局部变量表"><a href="#2-4-1-局部变量表" class="headerlink" title="2.4.1 局部变量表"></a>2.4.1 局部变量表</h3><p>局部变量表用于存放<strong>方法参数</strong>和<strong>局部变量</strong>，虚拟机通过索引定位的方式使用局部变量表。</p>
+<p>变量槽（Variable Slot）是局部变量表的最小单位，没有强制规定大小为 32 位，虽然32位足够存放大部分类型的数据。一个 Slot 可以存放 boolean、byte、char、short、int、float、reference 和 returnAddress 8种类型。其中 reference 表示对一个对象实例的引用，通过它可以得到对象在Java 堆中存放的起始地址的索引和该数据所属数据类型在方法区的类型信息。returnAddress 则指向了一条字节码指令的地址。 对于64位的 long 和 double 变量而言，虚拟机会为其分配两个连续的 Slot 空间。</p>
+<h3 id="2-4-2-操作数栈"><a href="#2-4-2-操作数栈" class="headerlink" title="2.4.2 操作数栈"></a>2.4.2 操作数栈</h3><p>方法执行过程中，进行算术运算或者是调用其他的方法进行参数传递的时候是通过操作数栈进行的。</p>
+<p>如果线程请求的栈深度大于虚拟机规定的最大深度，将会抛出StackOverflowError异常；如果虚拟机栈可以动态扩展，并且扩展时无法申请到足够的内存，就会跑出OutOfMemoryError异常</p>
+<h3 id="2-4-3-动态链接"><a href="#2-4-3-动态链接" class="headerlink" title="2.4.3 动态链接"></a>2.4.3 动态链接</h3><p>每个栈帧都包含一个执行运行时常量池中该栈帧所属方法的引用，持有这个引用是为了支持方法调用过程中的动态连接（Dynamic Linking）。<br>Class 文件中存放了大量的符号引用，字节码中的方法调用指令就是以常量池中指向方法的符号引用作为参数。这些符号引用一部分会在类加载阶段或第一次使用时转化为直接引用，这种转化称为静态解析。另一部分将在每一次运行期间转化为直接引用，这部分称为动态连接。</p>
+<h3 id="2-4-4-方法返回地址"><a href="#2-4-4-方法返回地址" class="headerlink" title="2.4.4 方法返回地址"></a>2.4.4 方法返回地址</h3><p>当一个方法开始执行以后，只有两种方法可以退出当前方法：<br>当执行遇到返回指令，会将返回值传递给上层的方法调用者，这种退出的方式称为正常完成出口（Normal Method Invocation Completion），一般来说，调用者的PC计数器可以作为返回地址。<br>当执行遇到异常，并且当前方法体内没有得到处理，就会导致方法退出，此时是没有返回值的，称为异常完成出口（Abrupt Method Invocation Completion），返回地址要通过异常处理器表来确定。</p>
+<h3 id="2-4-5-栈帧信息"><a href="#2-4-5-栈帧信息" class="headerlink" title="2.4.5 栈帧信息"></a>2.4.5 栈帧信息</h3><p>虚拟机规范并没有规定具体虚拟机实现包含什么附加信息，这部分的内容完全取决于具体实现。在实际开发中，一般会把动态连接，方法返回地址和附加信息全部归为一类，称为栈帧信息。</p>
+<h2 id="2-5-程序计数器"><a href="#2-5-程序计数器" class="headerlink" title="2.5 程序计数器"></a>2.5 程序计数器</h2><p>每一个Java线程都拥有自己的程序计数器，他可以看作多当前线程所执行的字节码行号指示器。字节码解释器通过改变程序计数器的值来选取下一条需要执行的指令。分支、循环、跳转、异常处理、线程恢复等基础功能都需要依赖这个计数器完成。</p>
+<h2 id="2-6-直接内存"><a href="#2-6-直接内存" class="headerlink" title="2.6 直接内存"></a>2.6 直接内存</h2><p>直接内存（Direct Memory）并不是虚拟机运行时数据区的一部分，也不是Java虚拟机规范中定义的内存区域，但是这部分内存也被频繁地使用，而且也可能导致OutOfMemoryError 异常出现，所以我们放到这里一起讲解。<br>在JDK 1.4 中新加入了NIO（New Input/Output）类，引入了一种基于通道（Channel）与缓冲区（Buffer）的I/O 方式，它可以使用Native 函数库直接分配堆外内存，然后通过一个存储在Java 堆里面的DirectByteBuffer 对象作为这块内存的引用进行操作。这样能在一些场景中显著提高性能，因为避免了在Java 堆和Native 堆中来回复制数据。显然，本机直接内存的分配不会受到Java 堆大小的限制，但是，既然是内存，则肯定还是会受到本机总内存（包括RAM 及SWAP 区或者分页文件）的大小及处理器寻址空间的限制。服务器管理员配置虚拟机参数时，一般会根据实际内存设置-Xmx等参数信息，但经常会忽略掉直接内存，使得各个内存区域的总和大于物理内存限制（包括物理上的和操作系统级的限制），从而导致动态扩展时出现OutOfMemoryError异常。</p>
+<h2 id="2-7-本地方法栈"><a href="#2-7-本地方法栈" class="headerlink" title="2.7 本地方法栈"></a>2.7 本地方法栈</h2><p>本地方法栈与JVM栈发挥的作用是非常相似的，他们的区别是JVM栈为执行Java方法服务，本地方法栈为执行Native方法服务。</p>
+<h1 id="3-参考文章"><a href="#3-参考文章" class="headerlink" title="3. 参考文章"></a>3. 参考文章</h1><ul>
+<li><a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.6" target="_blank" rel="noopener">Oracle Java虚拟机规范</a></li>
+<li><a href="http://blog.csdn.net/zq602316498/article/details/38926607" target="_blank" rel="noopener">Java 虚拟机运行时栈帧结构</a></li>
+<li><a href="https://mritd.me/2016/03/22/Java-%E5%86%85%E5%AD%98%E4%B9%8B%E6%96%B9%E6%B3%95%E5%8C%BA%E5%92%8C%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0/" target="_blank" rel="noopener">Java 内存之方法区和运行时常量池</a></li>
+<li><a href="http://www.cnblogs.com/wade-luffy/p/5813747.html" target="_blank" rel="noopener">JVM的本地方法栈</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/09/19/Java虚拟机-Java内存区域简介/" data-id="cjccsfmz10001lq39srj80089" class="article-share-link">Teilen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JVM/">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java虚拟机/">Java虚拟机</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java运行时数据区/">Java运行时数据区</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-设计模式-代理模式浅析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/09/18/设计模式-代理模式浅析/" class="article-date">
+  <time datetime="2017-09-18T03:06:13.000Z" itemprop="datePublished">2017-09-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/设计模式/">设计模式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/18/设计模式-代理模式浅析/">设计模式-代理模式浅析</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>  代理模式对真实对象添加了一个代理，屏蔽了客户端对真实对象的访问。打个比方，真实对象就是某个明星，代理对象则为明星的经纪人，我们想请某个明星唱歌演出，一般是和经纪人接触，很少和明星直接接触。</p>
+<h2 id="代理模式的作用"><a href="#代理模式的作用" class="headerlink" title="代理模式的作用"></a>代理模式的作用</h2><ul>
+<li>屏蔽对真实对象的访问（客户访问经纪人，而不是直接访问明星）。</li>
+<li>对真实对象的增加功能。（明星演出不仅仅是上个台表演一下就完事儿了，会涉及到很多额外工作，比如演出前安排人员和场地，演出后安排明星下榻酒店等）。</li>
+<li>控制真实对象的执行流程 （例子同上）。</li>
+</ul>
+<h2 id="代码展示"><a href="#代码展示" class="headerlink" title="代码展示"></a>代码展示</h2><p>下面以明星，经纪人，客户为例子展示代理模式，以下代码体现了代理模式增加功能的作用。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">// 明星接口</span><br><span class="line">public interface Star &#123;</span><br><span class="line">  // 明星演出</span><br><span class="line">  void actoin();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 明星周杰伦类</span><br><span class="line">public class JayChou implements Star &#123;</span><br><span class="line">  public void action() &#123;</span><br><span class="line">    System.out.println(&quot;----唱首《告白气球》----&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 周杰伦经纪人</span><br><span class="line">public class JingJiRen implements Star &#123;</span><br><span class="line">  private JayChou jc;</span><br><span class="line">  public JingJiRen() &#123;</span><br><span class="line">    jc = new JayChou;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  // 演出前</span><br><span class="line">  public void preAction() &#123;</span><br><span class="line">    System.out.println(&quot;----安排周杰伦唱歌乐队，场地和资金等----&quot;);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  // 演出后</span><br><span class="line">  public void postAction() &#123;</span><br><span class="line">    System.out.println(&quot;----安排周杰伦下榻酒店等----&quot;);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  //正式演出</span><br><span class="line">  public void action() &#123;</span><br><span class="line">    preAction();</span><br><span class="line">    jc.action();</span><br><span class="line">    postAction();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//客户</span><br><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">  Star jjr = new JingJiRen();</span><br><span class="line">  jjr.action();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="代理模式的实现方式"><a href="#代理模式的实现方式" class="headerlink" title="代理模式的实现方式"></a>代理模式的实现方式</h2><p>下面列举Java中3种代理模式的实现方式，并进行简单描述。具体实现在以后的文章中讨论。</p>
+<ul>
+<li><p><strong>静态代理</strong>。即手动新建代理类，然后编写相关代码。使用静态代理时，由于多写了一个代理对象，一旦接口增加方法，那么被代理类和代理类都要修改，比较麻烦，使用动态代理可以解决这个问题。</p>
+</li>
+<li><p><strong>动态代理</strong>。使用JDK的API，实现代理对象的自动生成。</p>
+</li>
+<li><p><strong>Cglib代理</strong>。上面的静态代理和动态代理模式都是要求目标对象是实现一个接口的目标对象,但是有时候目标对象只是一个单独的对象，并没有实现任何的接口，这个时候就可以使用以目标对象子类的方式类实现代理，这种方法就叫做:Cglib代理</p>
+</li>
+</ul>
+<h2 id="代理模式的使用场景"><a href="#代理模式的使用场景" class="headerlink" title="代理模式的使用场景"></a>代理模式的使用场景</h2><ul>
+<li>缓冲代理。比如图片加载，存储已经加载好的图片，若已经加载过了，则直接访问本地图片，不用再次加载。</li>
+<li>保护代理。为不同级别的客户提供不同的访问权限。</li>
+<li>远程代理。使得客户端能够访问远程主机上的对象，并且屏蔽网络传输等细节，客户端使用代理对象时不用主动访问网络。</li>
+<li>其他。</li>
+</ul>
+<h2 id="代理模式的优缺点"><a href="#代理模式的优缺点" class="headerlink" title="代理模式的优缺点"></a>代理模式的优缺点</h2><p>优点</p>
+<ul>
+<li>将调用者和真实被调用对象分离，降低系统耦合度。</li>
+<li>屏蔽了真实对象，起到了保护作用。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>会增加代理对象，对与某些对象比较多的场景，会编写过多代理对象，修改也变得麻烦。</li>
+<li>增加了系统的复杂度。</li>
+</ul>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><ul>
+<li><p><a href="http://www.jasongj.com/design_pattern/proxy_decorator/" target="_blank" rel="noopener">Java设计模式（六） 代理模式 vs. 装饰模式</a></p>
+</li>
+<li><p><a href="https://zh.wikipedia.org/wiki/%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F" target="_blank" rel="noopener">维基百科-代理模式</a></p>
+</li>
+<li><p><a href="http://www.cnblogs.com/cenyu/p/6289209.html" target="_blank" rel="noopener">Java的三种代理模式</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/will130/article/details/50729535" target="_blank" rel="noopener">代理模式（三）：远程代理，虚拟代理，缓冲代理</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/09/18/设计模式-代理模式浅析/" data-id="cjccsfmyy0000lq39oqvx94j7" class="article-share-link">Teilen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代理模式/">代理模式</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/设计模式/">设计模式</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Kategorien</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Java/">Java</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/Java/杂记/">杂记</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java虚拟机/">Java虚拟机</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/杂谈/">杂谈</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/杂谈/Lucene/">Lucene</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/设计模式/">设计模式</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/JVM/">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java虚拟机/">Java虚拟机</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java运行时数据区/">Java运行时数据区</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Lucene/">Lucene</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/代理模式/">代理模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/单例模式/">单例模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/工厂模式/">工厂模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/搜索引擎/">搜索引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/杂谈/">杂谈</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/装饰器模式/">装饰器模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/设计模式/">设计模式</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 10px;">Java</a> <a href="/tags/Java虚拟机/" style="font-size: 10px;">Java虚拟机</a> <a href="/tags/Java运行时数据区/" style="font-size: 10px;">Java运行时数据区</a> <a href="/tags/Lucene/" style="font-size: 10px;">Lucene</a> <a href="/tags/代理模式/" style="font-size: 10px;">代理模式</a> <a href="/tags/单例模式/" style="font-size: 10px;">单例模式</a> <a href="/tags/工厂模式/" style="font-size: 10px;">工厂模式</a> <a href="/tags/搜索引擎/" style="font-size: 10px;">搜索引擎</a> <a href="/tags/杂谈/" style="font-size: 10px;">杂谈</a> <a href="/tags/装饰器模式/" style="font-size: 10px;">装饰器模式</a> <a href="/tags/设计模式/" style="font-size: 20px;">设计模式</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">January 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/01/12/Java内存泄漏分析/">Java内存泄漏分析</a>
+          </li>
+        
+          <li>
+            <a href="/2018/01/12/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/">记一次Lucene中文分词器SmartChineseAnalyzer的源码探究</a>
+          </li>
+        
+          <li>
+            <a href="/2017/09/25/设计模式-装饰器模式/">设计模式-装饰器模式</a>
+          </li>
+        
+          <li>
+            <a href="/2017/09/21/设计模式-工厂模式/">设计模式-工厂模式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 ymjkMaster<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>
