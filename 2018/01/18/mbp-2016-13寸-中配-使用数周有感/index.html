@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Lucene,杂谈,搜索引擎," />
+  <meta name="keywords" content="杂记,macbook," />
 
 
 
@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="起因无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!问题如下 初步想法看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有">
-<meta name="keywords" content="Lucene,杂谈,搜索引擎">
+<meta name="description" content="1. 背景最近刚好发了奖学金，于是在v2ex上，花“巨资”购入二手mbp2016国行中配。其实心里想买16寸的，奈何希望省点钱给家里换几样家具，于是便买了二手13寸中配，老电脑t460s送给妹子用。使用数周后，也有了一点感想。 2. 硬件 - 屏幕我看过的最棒的屏幕。分辨率高，不容易反光，色域广（直观的感受就是图片更加鲜艳有层次）。 3. 硬件 - 键盘网上对其评价褒贬不一，有的人说苹果的第二代蝶">
+<meta name="keywords" content="杂记,macbook">
 <meta property="og:type" content="article">
-<meta property="og:title" content="记一次Lucene中文分词器SmartChineseAnalyzer的源码探究">
-<meta property="og:url" content="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/index.html">
+<meta property="og:title" content="mbp 2016 13寸 中配 使用数周有感">
+<meta property="og:url" content="http://yoursite.com/2018/01/18/mbp-2016-13寸-中配-使用数周有感/index.html">
 <meta property="og:site_name" content="杨明的博客">
-<meta property="og:description" content="起因无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!问题如下 初步想法看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有">
+<meta property="og:description" content="1. 背景最近刚好发了奖学金，于是在v2ex上，花“巨资”购入二手mbp2016国行中配。其实心里想买16寸的，奈何希望省点钱给家里换几样家具，于是便买了二手13寸中配，老电脑t460s送给妹子用。使用数周后，也有了一点感想。 2. 硬件 - 屏幕我看过的最棒的屏幕。分辨率高，不容易反光，色域广（直观的感受就是图片更加鲜艳有层次）。 3. 硬件 - 键盘网上对其评价褒贬不一，有的人说苹果的第二代蝶">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-01-12T14:52:51.940Z">
+<meta property="og:updated_time" content="2018-01-18T09:43:05.319Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="记一次Lucene中文分词器SmartChineseAnalyzer的源码探究">
-<meta name="twitter:description" content="起因无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!问题如下 初步想法看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有">
+<meta name="twitter:title" content="mbp 2016 13寸 中配 使用数周有感">
+<meta name="twitter:description" content="1. 背景最近刚好发了奖学金，于是在v2ex上，花“巨资”购入二手mbp2016国行中配。其实心里想买16寸的，奈何希望省点钱给家里换几样家具，于是便买了二手13寸中配，老电脑t460s送给妹子用。使用数周后，也有了一点感想。 2. 硬件 - 屏幕我看过的最棒的屏幕。分辨率高，不容易反光，色域广（直观的感受就是图片更加鲜艳有层次）。 3. 硬件 - 键盘网上对其评价褒贬不一，有的人说苹果的第二代蝶">
 
 
 
@@ -120,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/01/18/mbp-2016-13寸-中配-使用数周有感/"/>
 
 
 
 
 
-  <title>记一次Lucene中文分词器SmartChineseAnalyzer的源码探究 | 杨明的博客</title>
+  <title>mbp 2016 13寸 中配 使用数周有感 | 杨明的博客</title>
   
 
 
@@ -233,7 +233,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/18/mbp-2016-13寸-中配-使用数周有感/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="ymjkMaster">
@@ -250,7 +250,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">记一次Lucene中文分词器SmartChineseAnalyzer的源码探究</h1>
+          <h1 class="post-title" itemprop="name headline">mbp 2016 13寸 中配 使用数周有感</h1>
         
 
         <div class="post-meta">
@@ -262,8 +262,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-05T20:50:34+08:00">
-                2017-12-05
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-18T17:12:01+08:00">
+                2018-01-18
               </time>
             
 
@@ -285,19 +285,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/杂谈/" itemprop="url" rel="index">
-                    <span itemprop="name">杂谈</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/杂谈/Lucene/" itemprop="url" rel="index">
-                    <span itemprop="name">Lucene</span>
+                  <a href="/categories/杂记/" itemprop="url" rel="index">
+                    <span itemprop="name">杂记</span>
                   </a>
                 </span>
 
@@ -333,27 +322,27 @@
       
 
       
-        <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!<br>问题如下<br></p>
-<h2 id="初步想法"><a href="#初步想法" class="headerlink" title="初步想法"></a>初步想法</h2><p>看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有想像中的简单)…</p>
-<p>为了证明我的想法，我特意找到了Lucene7.1 SmartChineseAnalyzer的官方文档…然后看到了</p>
+        <h2 id="1-背景"><a href="#1-背景" class="headerlink" title="1. 背景"></a>1. 背景</h2><p>最近刚好发了奖学金，于是在v2ex上，花“巨资”购入二手mbp2016国行中配。其实心里想买16寸的，奈何希望省点钱给家里换几样家具，于是便买了二手13寸中配，老电脑t460s送给妹子用。使用数周后，也有了一点感想。</p>
+<h2 id="2-硬件-屏幕"><a href="#2-硬件-屏幕" class="headerlink" title="2. 硬件 - 屏幕"></a>2. 硬件 - 屏幕</h2><p>我看过的最棒的屏幕。分辨率高，不容易反光，色域广（直观的感受就是图片更加鲜艳有层次）。</p>
+<h2 id="3-硬件-键盘"><a href="#3-硬件-键盘" class="headerlink" title="3. 硬件 - 键盘"></a>3. 硬件 - 键盘</h2><p>网上对其评价褒贬不一，有的人说苹果的第二代蝶式键盘是史上第二烂的键盘（没错，第一烂是第一代），也有人说习惯了之后手感非常棒，都不想用机械了。我在入手前也试用过同学的mbp2016，也被其敲桌子的手感所震撼。经过几周的使用，发现习惯了这个键盘也还行。总结起来有一下特点</p>
+<ul>
+<li>生硬</li>
+<li>声音大（相比于其他笔记本键盘）</li>
+<li>键盘漏光少，这个很棒</li>
+<li>不容易误触</li>
+<li>清脆<br>有点小青轴的感觉，有时甚至觉得手感还不错。但是当我用回我的t460s的时候…啊，这顺滑温柔的感觉，好久没有过了。</li>
+</ul>
+<h2 id="4-硬件-touchbar"><a href="#4-硬件-touchbar" class="headerlink" title="4. 硬件 - touchbar"></a>4. 硬件 - touchbar</h2><p>网上对其评价也是褒贬不一。touchbar会根据不同的应用提供不同的功能，甚至可以自定义。比如进入safari的时候，touchbar可以提供新建标签按钮、显示历史记录的按钮、显示收藏按钮等。<br>个人认为：</p>
+<ul>
+<li>对于懂电脑的人或者专业人士（程序员/设计师）：没啥用<br>理由：touchbar提供的额外功能对于专业人士，几个快捷键就可以搞定，并可以形成肌肉记忆，比起touchbar输入更快，更方便</li>
+<li>对于电脑使用不熟练的人士：好用<br>理由：把一些常用、重要，但是不太容易触发（对于非专业人士）到功能，集成到touchbar上，使用的时候轻轻一点，不用记快捷键，不用鼠标点点点。</li>
+</ul>
+<h2 id="5-硬件-内存"><a href="#5-硬件-内存" class="headerlink" title="5. 硬件 - 内存"></a>5. 硬件 - 内存</h2><p>8g实在不经我折腾，safari开8，9个标签，开个IDEA，开个DASH，开个vscode内存满了，并且交换区还有1g，频繁大量的交换，导致我每天的硬盘写入量过20g。</p>
+<h2 id="6-硬件-外观、重量与尺寸"><a href="#6-硬件-外观、重量与尺寸" class="headerlink" title="6. 硬件 - 外观、重量与尺寸"></a>6. 硬件 - 外观、重量与尺寸</h2><p>两个字：真TM的棒</p>
+<h2 id="7-硬件-触摸板"><a href="#7-硬件-触摸板" class="headerlink" title="7. 硬件 - 触摸板"></a>7. 硬件 - 触摸板</h2><p>两个字：真TM的棒</p>
+<h2 id="8-系统"><a href="#8-系统" class="headerlink" title="8. 系统"></a>8. 系统</h2><p>UI很好看，各种切换动画也很酷炫，但是其实不如windows流畅，偶尔卡顿，可能是我内存小的原因。</p>
+<h2 id="9-总结"><a href="#9-总结" class="headerlink" title="9. 总结"></a>9. 总结</h2><p>好用，值得购买。以后有钱上高配。</p>
 
-<p>哈哈，果然用了停用词表，果断写代码验证，并且把默认停用词表关了，看看效果…</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    StringReader reader = new StringReader(&quot;人生苦短_我用Python&quot;);</span><br><span class="line">    SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer(false);</span><br><span class="line">    try &#123;</span><br><span class="line">        AnalyzerUtil.displayTokens(analyzer.tokenStream(&quot;content&quot;, reader));</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>结果如下</p>
-
-<p>可以看到，下划线的当做逗号了…初步想法失败…</p>
-<h2 id="二次尝试"><a href="#二次尝试" class="headerlink" title="二次尝试"></a>二次尝试</h2><p>嗯…居然失败了…看来把问题想简单了，到那时哥好歹也是看过《Lucene in Action》的人，对Lucene的Analyzer基本原理算是略知一二，是时候展（zhuang）现（bi）真正的实力了。</p>
-<p>我们知道，Lucene的分析器一般会采用了一套分析链的机制进行分析，一般先经过reader读取字符串，然后经过tokenizer进行分词（分成一个个token），然后经过若干TokenFilter进行过滤（这里的过滤不一定要删减token，比如同义词扩展就可以使用filter进行）。</p>
-<p>那么问题到底出在哪儿呢…</p>
-<p>google了一大堆资料，发现没人提相关问题，而且版本都很老。没办法，只能祭出源码查看大法了…</p>
-<h2 id="源码探究之旅"><a href="#源码探究之旅" class="headerlink" title="源码探究之旅"></a>源码探究之旅</h2><p>要看源码其实我是拒绝的，因为不知道其原理，而且我自己查看源码的经验不是特别丰富…我一直认为，要查看别人写的代码，最好先知道人家代码大体的实现思路，了解关键的API，然后由简到繁。而不是一头扎进去，死扣细节，最后淹没在代码的海洋里。</p>
-<p>为了了解SmartChineseAnalyzer的大概实现原理，我找到了其官方文档的描述。</p>
-<blockquote><p>SmartChineseAnalyzer is an analyzer for Chinese or mixed Chinese-English text. The analyzer uses probabilistic knowledge to find the optimal word segmentation for Simplified Chinese text. The text is first broken into sentences, then each sentence is segmented into words.</p>
-<p>Segmentation is based upon the Hidden Markov Model. A large training corpus was used to calculate Chinese word frequency probability.</p>
-<p>This analyzer requires a dictionary to provide statistical data. SmartChineseAnalyzer has an included dictionary out-of-box.</p>
-<footer><strong>https://lucene.apache.org/core/7_1_0/analyzers-smartcn/org/apache/lucene/analysis/cn/smart/SmartChineseAnalyzer.html</strong></footer></blockquote>
-<p>其实官方描述也写得比较粗略，google了一些资料，大多都将算法原理，代码解析很少。算了，先大概看看源码吧。。。</p>
-<h2 id="未完待续"><a href="#未完待续" class="headerlink" title="未完待续"></a>未完待续</h2>
       
     </div>
     
@@ -370,11 +359,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Lucene/" rel="tag"># Lucene</a>
+            <a href="/tags/杂记/" rel="tag"># 杂记</a>
           
-            <a href="/tags/杂谈/" rel="tag"># 杂谈</a>
-          
-            <a href="/tags/搜索引擎/" rel="tag"># 搜索引擎</a>
+            <a href="/tags/macbook/" rel="tag"># macbook</a>
           
         </div>
       
@@ -387,8 +374,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/09/25/设计模式-装饰器模式/" rel="next" title="设计模式-装饰器模式">
-                <i class="fa fa-chevron-left"></i> 设计模式-装饰器模式
+              <a href="/2018/01/12/Java内存泄漏分析/" rel="next" title="Java内存泄漏分析">
+                <i class="fa fa-chevron-left"></i> Java内存泄漏分析
               </a>
             
           </div>
@@ -396,10 +383,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/01/12/hello-world/" rel="prev" title="Hello World">
-                Hello World <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -531,7 +514,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#起因"><span class="nav-number">1.</span> <span class="nav-text">起因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步想法"><span class="nav-number">2.</span> <span class="nav-text">初步想法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二次尝试"><span class="nav-number">3.</span> <span class="nav-text">二次尝试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#源码探究之旅"><span class="nav-number">4.</span> <span class="nav-text">源码探究之旅</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#未完待续"><span class="nav-number">5.</span> <span class="nav-text">未完待续</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-背景"><span class="nav-number">1.</span> <span class="nav-text">1. 背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-硬件-屏幕"><span class="nav-number">2.</span> <span class="nav-text">2. 硬件 - 屏幕</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-硬件-键盘"><span class="nav-number">3.</span> <span class="nav-text">3. 硬件 - 键盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-硬件-touchbar"><span class="nav-number">4.</span> <span class="nav-text">4. 硬件 - touchbar</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-硬件-内存"><span class="nav-number">5.</span> <span class="nav-text">5. 硬件 - 内存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-硬件-外观、重量与尺寸"><span class="nav-number">6.</span> <span class="nav-text">6. 硬件 - 外观、重量与尺寸</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-硬件-触摸板"><span class="nav-number">7.</span> <span class="nav-text">7. 硬件 - 触摸板</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-系统"><span class="nav-number">8.</span> <span class="nav-text">8. 系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-总结"><span class="nav-number">9.</span> <span class="nav-text">9. 总结</span></a></li></ol></div>
             
 
           </div>
