@@ -229,6 +229,219 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/21/JavaIO框架学习/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/01/21/JavaIO框架学习/" itemprop="url">JavaIO框架宏观学习</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-21T21:31:03+08:00">
+                2018-01-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java-IO/" itemprop="url" rel="index">
+                    <span itemprop="name">Java IO</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="1-背景"><a href="#1-背景" class="headerlink" title="1. 背景"></a>1. 背景</h2><p>第一次接触到 Java IO 部分的时候十分头疼，为啥？这么多类我到底看哪一个好呢？而且看了网上的代码，光是读一个文件就各种 try catch，读个文件动不动就十几行代码出来了（使用了 try-with-resource会好很多）我想读一个文件的时候，我使用FileInputStream、FileReader、BufferedInputStream 还是 FileChannel 好呢，而且 Java 8 还支持使用流 API 的方式读文件，脑袋更晕了？要是 Python 的话倒是好办了，直接一个 with + open 就搞定了。</p>
+<p>后来通过天池中间件数据竞赛（进程间消息引擎）对了IO有了更多的了解，以及后来图片搜索的项目之后，逐渐明白，虽然看起 Java IO 框架看起来多而且杂，但是仔细梳理一下还是很容易理解的，并且算上 NIO 部分，  Java IO 可以满足很多需求。Python 的 open 虽然简单，但当对 IO 进行更细粒度的操作的时候，可能就显得力不从心了，当然 Python 也有优秀的 IO 框架。</p>
+<h2 id="2-大纲"><a href="#2-大纲" class="headerlink" title="2. 大纲"></a>2. 大纲</h2><p>这次主要复习Java IO 部分的知识主要从宏观的角度学习，而具体每个类都有自己的实现及特点，重要类的源码分析，这些将在以后的文章详细复习，NIO部分的知识会在以后复习。</p>
+<ul>
+<li>理解流</li>
+<li>Java IO 类组成概览</li>
+<li>重要 IO 类的功能</li>
+<li>IO 类异常处理与 try with 语法</li>
+</ul>
+<h2 id="3-理解流"><a href="#3-理解流" class="headerlink" title="3. 理解流"></a>3. 理解流</h2><p>首先来看官方文档的说法</p>
+<blockquote>
+<p>An I/O Stream represents an input source or an output destination. A stream can represent many different kinds of sources and destinations, including disk files, devices, other programs, and memory arrays.<br>Streams support many different kinds of data, including simple bytes, primitive data types, localized characters, and objects. Some streams simply pass on data; others manipulate and transform the data in useful ways.<br>No matter how they work internally, all streams present the same simple model to programs that use them: A stream is a sequence of data. A program uses an input stream to read data from a source, one item at a time</p>
+</blockquote>
+<p>其实把这段话看完对流就会有基本的认识了，尤其是其中的 <em>A stream is a sequence of data</em><br><img src="/images/15165429574181.jpg" alt=""></p>
+<p>注意，流一般是单向的，此次从方向上，我们可以把流分为：</p>
+<ul>
+<li>输入流</li>
+<li>输出流</li>
+</ul>
+<p>根据数据流的来源或者去向可以分为：</p>
+<ul>
+<li>文件流</li>
+<li>网络流</li>
+<li>内存流</li>
+</ul>
+<p>官方文档把流分为</p>
+<ul>
+<li><strong>Byte Streams</strong> handle I/O of raw binary data.</li>
+<li><strong>Character Streams</strong> handle I/O of character data, automatically handling translation to and from the local character set.</li>
+<li><strong>Buffered Streams</strong> optimize input and output by reducing the number of calls to the native API.</li>
+<li><strong>Scanning and Formatting</strong> allows a program to read and write formatted text.</li>
+<li><strong>I/O</strong> from the Command Line describes the Standard Streams and the Console object.</li>
+<li><strong>Data Streams</strong> handle binary I/O of primitive data type and String values.</li>
+<li><strong>Object Streams</strong> handle binary I/O of objects.</li>
+</ul>
+<h2 id="4-Java-IO-组成类概览"><a href="#4-Java-IO-组成类概览" class="headerlink" title="4. Java IO 组成类概览"></a>4. Java IO 组成类概览</h2><p>首先来窥探部分JavaIO相关类…嗯，看起来很多，一个一个看下来头都大了。但是注意每个类其实都提示了这个类的功能，根据功能、流方向、数据类型等维度对这些类进行划分，那么不会有那么头大的感觉了。并且InputStream/Reader 以及 OutputStream/Writer有很多功能相似的子类。<br><img src="/images/15165434534097.png" alt=""></p>
+<p>关于 Java IO 还有如下这张表<br><img src="/images/15165440515876.jpg" alt=""></p>
+<h2 id="5-重要IO类功能简介"><a href="#5-重要IO类功能简介" class="headerlink" title="5. 重要IO类功能简介"></a>5. 重要IO类功能简介</h2><ul>
+<li><p>File 流系列<br>主要负责文件的读写，包含了 FileInputStream、FileOutputStream、FileReader 等类</p>
+</li>
+<li><p>Buffering 系列<br>主要的功能是具有缓存功能（一次读取多个字节到缓冲区）。</p>
+</li>
+<li><p>Pipes 系列<br>主要的功能是负责<em>线程间通信</em><br>官方文档是这样描述他们的功能的</p>
+<blockquote>
+<p>A piped input stream should be connected to a piped output stream; the piped input stream then provides whatever data bytes are written to the piped output stream. Typically, data is read from a PipedInputStream object by one thread and data is written to the corresponding </p>
+<p>PipedOutputStream by some other thread. Attempting to use both objects from a single thread is not recommended, as it may deadlock the thread. The piped input stream contains a buffer, decoupling read operations from write operations, within limits. A pipe is said to be broken if a thread that was providing data bytes to the connected piped output stream is no longer alive.</p>
+</blockquote>
+</li>
+<li><p>Data 系列<br>用于 Java 基本类型的读取和写入</p>
+</li>
+<li><p>Filter 系列<br>如果你看看 Filter 系列的源码，你会发现，Filter系列似乎对其父类并没有大改动，较大的区别是构造器不一样，Filter 系列将另一个 Stream 作为自己的构造器参数。<br>看起来这没有意义，实际上这个地方的设计非常巧妙，为啥？看下章。</p>
+</li>
+</ul>
+<h2 id="6-Java-IO-的异常处理"><a href="#6-Java-IO-的异常处理" class="headerlink" title="6. Java IO 的异常处理"></a>6. Java IO 的异常处理</h2><p>先看一段代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> String <span class="title">readFirstLineFromFileWithFinallyBlock</span><span class="params">(String path)</span></span></span><br><span class="line"><span class="function">                                                     <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    BufferedReader br = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> FileReader(path));</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> br.readLine();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (br != <span class="keyword">null</span>) br.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码有两个问题</p>
+<ol>
+<li>如果 finally 语句的 close 也发生异常，那么这段程序会崩溃</li>
+<li>如果我们把 close 语句也加上 try catch 那么会导致 readLine() 抛出的异常被suppressed(覆盖？)<br>还有一个问题就是显得比较冗长，要是有像 Python 那样的 with open 语法就好了。</li>
+</ol>
+<p>嗯，是的，Java 也有类似的语法，那就是 try with 语法。</p>
+<p>看个例子</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">writeToFileZipFileContents</span><span class="params">(String zipFileName,</span></span></span><br><span class="line"><span class="function"><span class="params">                                           String outputFileName)</span></span></span><br><span class="line"><span class="function">                                           <span class="keyword">throws</span> java.io.IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">    java.nio.charset.Charset charset =</span><br><span class="line">         java.nio.charset.StandardCharsets.US_ASCII;</span><br><span class="line">    java.nio.file.Path outputFilePath = java.nio.file.Paths.get(outputFileName);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Open zip file and create output file with </span></span><br><span class="line">    <span class="comment">// try-with-resources statement</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> (</span><br><span class="line">        java.util.zip.ZipFile zf =</span><br><span class="line">             <span class="keyword">new</span> java.util.zip.ZipFile(zipFileName);</span><br><span class="line">        java.io.BufferedWriter writer = </span><br><span class="line">            java.nio.file.Files.newBufferedWriter(outputFilePath, charset)</span><br><span class="line">    ) &#123;</span><br><span class="line">        <span class="comment">// Enumerate each entry</span></span><br><span class="line">        <span class="keyword">for</span> (java.util.Enumeration entries =</span><br><span class="line">                                zf.entries(); entries.hasMoreElements();) &#123;</span><br><span class="line">            <span class="comment">// Get the entry name and write it to the output file</span></span><br><span class="line">            String newLine = System.getProperty(<span class="string">"line.separator"</span>);</span><br><span class="line">            String zipEntryName =</span><br><span class="line">                 ((java.util.zip.ZipEntry)entries.nextElement()).getName() +</span><br><span class="line">                 newLine;</span><br><span class="line">            writer.write(zipEntryName, <span class="number">0</span>, zipEntryName.length());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在上面的代码中我们在进行资源相关操作时，把语句写到 try 的括号内， 并用分号分隔，如果资源操作发生异常，程序会自动抛出相关异常，并且安全的进行 close 操作，这个操作不用显式的写出，从而使代码看起来很简洁。</p>
+<p>当然这个语法的前提是，相关的资源实现了AutoCloseable接口才行。</p>
+<ul>
+<li>AutoCloseable 与 Closable 接口的区别</li>
+</ul>
+<blockquote>
+<p>java.io.Closeable<br>Java 5引入，为 流对象提供资源释放实现<br>使用Java 7及更高版本实现接口后可以使用try-with-resource语法实现自动释放资源<br>close()方法声明抛出java.io.IOException，意味着接口实现类的close()方法 只能声明抛出IOException或者IOException的子类<br>close()方法 需要保证多次调用不产生副作用</p>
+<p>java.lang.AutoCloseable<br>Java 7引入，为 所有可以关闭的对象提供资源释放实现，成为java.io.Closeable的父接口<br>使用Java 7以及更高版本实现接口后可以使用try-with-resource语法实现自动释放资源<br>close()方法声明抛出java.lang.Exception，意味着接口实现类的close()方法 可以声明抛出Exception或者Exception的子类<br>close()方法 不需要保证多次调用不产生副作用</p>
+</blockquote>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/18/mbp-2016-13寸-中配-使用数周有感/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -334,7 +547,7 @@
 </ul>
 <h2 id="4-硬件-touchbar"><a href="#4-硬件-touchbar" class="headerlink" title="4. 硬件 - touchbar"></a>4. 硬件 - touchbar</h2><p>网上对其评价也是褒贬不一。touchbar会根据不同的应用提供不同的功能，甚至可以自定义。比如进入safari的时候，touchbar可以提供新建标签按钮、显示历史记录的按钮、显示收藏按钮等。<br>个人认为：</p>
 <ul>
-<li>对于懂电脑的人或者专业人士（程序员/设计师）：没啥用<br>理由：touchbar提供的额外功能对于专业人士，几个快捷键就可以搞定，并可以形成肌肉记忆，比起touchbar输入更快，更方便</li>
+<li>对于懂电脑的人或者专业人士（程序员/设计师）：用处不大<br>理由：touchbar提供的额外功能对于专业人士，几个快捷键就可以搞定，并可以形成肌肉记忆，比起touchbar输入更快，更方便。（最近发现了一个叫BetterTouchBar的软件，可以自定义按钮并且为按钮定制脚本，这就有意思多了）</li>
 <li>对于电脑使用不熟练的人士：好用<br>理由：把一些常用、重要，但是不太容易触发（对于非专业人士）到功能，集成到touchbar上，使用的时候轻轻一点，不用记快捷键，不用鼠标点点点。</li>
 </ul>
 <h2 id="5-硬件-内存"><a href="#5-硬件-内存" class="headerlink" title="5. 硬件 - 内存"></a>5. 硬件 - 内存</h2><p>8g实在不经我折腾，safari开8，9个标签，开个IDEA，开个DASH，开个vscode内存满了，并且交换区还有1g，频繁大量的交换，导致我每天的硬盘写入量过20g。</p>
@@ -1847,7 +2060,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">10</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1858,7 +2071,7 @@
               
               <div class="site-state-item site-state-categories">
                 
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">分类</span>
                 
               </div>
@@ -1869,7 +2082,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">标签</span>
                 
               </div>
