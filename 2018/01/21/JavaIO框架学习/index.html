@@ -90,7 +90,7 @@
 <meta property="og:image" content="http://yoursite.com/images/15165429574181.jpg">
 <meta property="og:image" content="http://yoursite.com/images/15165434534097.png">
 <meta property="og:image" content="http://yoursite.com/images/15165440515876.jpg">
-<meta property="og:updated_time" content="2018-01-22T02:52:01.748Z">
+<meta property="og:updated_time" content="2018-01-23T01:10:13.571Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JavaIO框架宏观学习">
 <meta name="twitter:description" content="1. 背景第一次接触到 Java IO 部分的时候十分头疼，为啥？这么多类我到底看哪一个好呢？而且看了网上的代码，光是读一个文件就各种 try catch，读个文件动不动就十几行代码出来了（使用了 try-with-resource会好很多）我想读一个文件的时候，我使用FileInputStream、FileReader、BufferedInputStream 还是 FileChannel 好呢，">
@@ -361,7 +361,7 @@
 <li><strong>Data Streams</strong> handle binary I/O of primitive data type and String values.</li>
 <li><strong>Object Streams</strong> handle binary I/O of objects.</li>
 </ul>
-<h2 id="4-Java-IO-组成类概览"><a href="#4-Java-IO-组成类概览" class="headerlink" title="4. Java IO 组成类概览"></a>4. Java IO 组成类概览</h2><p>首先来窥探部分JavaIO相关类…嗯，看起来很多，一个一个看下来头都大了。但是注意每个类其实都提示了这个类的功能，根据功能、流方向、数据类型等维度对这些类进行划分，那么不会有那么头大的感觉了。并且InputStream/Reader 以及 OutputStream/Writer有很多功能相似的子类。<br><img src="/images/15165434534097.png" alt=""></p>
+<h2 id="4-Java-IO-组成类概览"><a href="#4-Java-IO-组成类概览" class="headerlink" title="4. Java IO 组成类概览"></a>4. Java IO 组成类概览</h2><p>Java IO 框架其中的类种类繁多，但是我们结合装饰器模式 + 理解4大类并了解其中一个大类之后，其他的就好类比学习了。<br>首先来窥探部分JavaIO相关类…嗯，看起来很多，一个一个看下来头都大了。但是注意每个类其实都提示了这个类的功能，根据功能、流方向、数据类型等维度对这些类进行划分，那么不会有那么头大的感觉了。并且InputStream/Reader 以及 OutputStream/Writer有很多功能相似的子类。<br><img src="/images/15165434534097.png" alt=""></p>
 <p>关于 Java IO 还有如下这张表<br><img src="/images/15165440515876.jpg" alt=""></p>
 <h2 id="5-重要IO类功能简介"><a href="#5-重要IO类功能简介" class="headerlink" title="5. 重要IO类功能简介"></a>5. 重要IO类功能简介</h2><ul>
 <li><p>File 流系列<br>主要负责文件的读写，包含了 FileInputStream、FileOutputStream、FileReader 等类</p>
@@ -398,6 +398,11 @@
 <p>java.io.Closeable<br>Java 5引入，为 流对象提供资源释放实现<br>使用Java 7及更高版本实现接口后可以使用try-with-resource语法实现自动释放资源<br>close()方法声明抛出java.io.IOException，意味着接口实现类的close()方法 只能声明抛出IOException或者IOException的子类<br>close()方法 需要保证多次调用不产生副作用</p>
 <p>java.lang.AutoCloseable<br>Java 7引入，为 所有可以关闭的对象提供资源释放实现，成为java.io.Closeable的父接口<br>使用Java 7以及更高版本实现接口后可以使用try-with-resource语法实现自动释放资源<br>close()方法声明抛出java.lang.Exception，意味着接口实现类的close()方法 可以声明抛出Exception或者Exception的子类<br>close()方法 不需要保证多次调用不产生副作用</p>
 </blockquote>
+<h2 id="7-参考文章"><a href="#7-参考文章" class="headerlink" title="7. 参考文章"></a>7. 参考文章</h2><ul>
+<li><a href="https://docs.oracle.com/javase/tutorial/essential/io/index.html" target="_blank" rel="noopener">Oracle 官方文档 IO 部分</a></li>
+<li><a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html#suppressed-exceptions" target="_blank" rel="noopener">Oracle 官方文档 try with resource 部分</a></li>
+<li><a href="http://tutorials.jenkov.com/java-io/index.html" target="_blank" rel="noopener">Java IO tutorial - Jakob Jenkov</a></li>
+</ul>
 
       
     </div>
@@ -439,6 +444,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/01/23/JavaIO-之-InputStream-源码解析Java9/" rel="prev" title="JavaIO 之 InputStream 源码解析（Java 9 版本）">
+                JavaIO 之 InputStream 源码解析（Java 9 版本） <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -515,7 +524,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -570,7 +579,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-背景"><span class="nav-number">1.</span> <span class="nav-text">1. 背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-大纲"><span class="nav-number">2.</span> <span class="nav-text">2. 大纲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-理解流"><span class="nav-number">3.</span> <span class="nav-text">3. 理解流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Java-IO-组成类概览"><span class="nav-number">4.</span> <span class="nav-text">4. Java IO 组成类概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-重要IO类功能简介"><span class="nav-number">5.</span> <span class="nav-text">5. 重要IO类功能简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Java-IO-的异常处理"><span class="nav-number">6.</span> <span class="nav-text">6. Java IO 的异常处理</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-背景"><span class="nav-number">1.</span> <span class="nav-text">1. 背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-大纲"><span class="nav-number">2.</span> <span class="nav-text">2. 大纲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-理解流"><span class="nav-number">3.</span> <span class="nav-text">3. 理解流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Java-IO-组成类概览"><span class="nav-number">4.</span> <span class="nav-text">4. Java IO 组成类概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-重要IO类功能简介"><span class="nav-number">5.</span> <span class="nav-text">5. 重要IO类功能简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Java-IO-的异常处理"><span class="nav-number">6.</span> <span class="nav-text">6. Java IO 的异常处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-参考文章"><span class="nav-number">7.</span> <span class="nav-text">7. 参考文章</span></a></li></ol></div>
             
 
           </div>
