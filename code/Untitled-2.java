@@ -11,6 +11,7 @@ public class CallBackA implements CallBack {
     public void doSomeThing(Caller caller) {
         System.out.println("a do something");
         caller.close();
+        
     }
 }
 

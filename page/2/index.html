@@ -229,6 +229,201 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/20/设计模式-单例模式/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/09/20/设计模式-单例模式/" itemprop="url">设计模式-并不简单的单例模式</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-20T15:12:33+08:00">
+                2017-09-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/设计模式/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>有时候我们在写程序的时候，我们希望在全局共用一个对象。比如一个负责读取全局配置文件的类A，读取一次配置文件之后，使用单例模式，我们可以得到一个全局唯一的对象a，其他对象读取配置时就不用重复实例化类A，并重复读取配置文件了。<br>总之，单例模式保证了某个类全局只存在一个实例。</p>
+<p>单例模式的实现一般可以分为以下几类</p>
+<ul>
+<li>懒汉式（非线程安全）</li>
+<li>懒汉式（线程安全）</li>
+<li>饿汉式</li>
+<li>双重检查锁</li>
+<li>静态内部类</li>
+<li>枚举</li>
+</ul>
+<p>下面简要介绍上述实现方法</p>
+<h2 id="懒汉式（非线程安全）"><a href="#懒汉式（非线程安全）" class="headerlink" title="懒汉式（非线程安全）"></a>懒汉式（非线程安全）</h2><p>先上代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 懒汉模式，非线程安全</span><br><span class="line"> */</span><br><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line"></span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      instance = new SingleTon();</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>懒汉模式只所以叫懒汉，是因为他使用了“惰性加载（Lazy Initialization）”的思想(好吧，这是我瞎猜的)<br>为了防止单例类被其他类new出来，我们将单例类的构造函数设为private。在单线程模式下，这个单例是可用的，但是一旦在多线程的情况下，可能会有多个线程进入if语句，导致单例产生多个实例。</p>
+<p>总之，该实现方式使用了惰性加载技术，但是非线程安全，不推荐使用。</p>
+<h2 id="懒汉式（线程安全）"><a href="#懒汉式（线程安全）" class="headerlink" title="懒汉式（线程安全）"></a>懒汉式（线程安全）</h2><p>在之前的基础上，为了保证懒汉式单例模式的线程安全，我们利用Java的synchronized关键字保证其线程安全。其代码如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line">  public static synchronized getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      instance = new SingleTon();</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>使用了synchronized关键字对getInstance方法修饰后，我们保证了懒汉式的线程安全性。但是该模式存在一个致命的问题，那就是性能问题。</p>
+<p>假设SingleTon类的instance已经被实例化了，如果有多个线程调用getInstance时，只有一个线程能获得锁，其他线程都不得不等待，这会影响系统的性能。</p>
+<p>总之，线程安全的懒汉式同样使用了惰性加载技术，并且是线程安全的，但是并发性能并不是很好。那么怎么解决这个问题，并能保证线程安全和使用懒加载呢？答案是“双重检验锁”。</p>
+<h2 id="双重检验锁"><a href="#双重检验锁" class="headerlink" title="双重检验锁"></a>双重检验锁</h2><p>先看代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      synchronized(SingleTon.class) &#123;</span><br><span class="line">        if (instance == null) &#123;</span><br><span class="line">          instance = new SingleTon();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如上面代码所示，如果第一次检查instance不为null，那么就不需要执行下面的加锁和初始化操作。因此可以大幅降低synchronized带来的性能开销。</p>
+<p>看似这段代码可以很好的实现单例模式了，但是这段代码有一个隐藏的BUG。原因在instance = new SingleTon()这句话，因为JVM在执行这句代码的时候，大概进行了以下3个步骤：</p>
+<ol>
+<li>为SingleTon分配内存。</li>
+<li>调用SingleTon的构造函数进行初始化。</li>
+<li>将instance指针指向分配好的地址。<br>理想执行顺序是1-&gt;2-&gt;3，之前的代码不会有问题。然而由于某些JIT编译器存在指令重排序，可能会出现1-&gt;3-&gt;2的指令执行顺序，这时可能会导致线程1执行完3以后，另外一个线程抢占使用instance，那么就会出现错误。</li>
+</ol>
+<p>解决这个问题的办法很简单，只需要将 instance 变量声明成 volatile 就可以了。<br>volatileu关键字有两个功能：</p>
+<ol>
+<li>保证变量的内存可见性</li>
+<li>局部阻止重排序的发生<br>这里我们用到了第二个功能，保证了单例模式的正常实现。修改后的代码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon &#123;</span><br><span class="line">  private volatile static SingleTon instance;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      synchronized(SingleTon.class) &#123;</span><br><span class="line">        if (instance == null) &#123;</span><br><span class="line">          instance = new SingleTon();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>通过上面的代码，我们就可以愉快地使用单例模式了。这是一种比较线程安全且用到了惰性加载技术的单例模式实现方法。</p>
+<h2 id="饿汉模式"><a href="#饿汉模式" class="headerlink" title="饿汉模式"></a>饿汉模式</h2><p>这里介绍另外一种不适用惰性加载技术的单例模式实现方法，不使用惰性加载之后，代码也变得简洁了许多。代码如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static final SingleTon instance = new SingleTon();</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，这种单例模式在类加载期间就会初始化instance实例，JVM会保证多个线程初始化一个类的时候只有一个类执行，所以我们不用担心线程安全问题。</p>
+<h2 id="静态内部类方法"><a href="#静态内部类方法" class="headerlink" title="静态内部类方法"></a>静态内部类方法</h2><p>代码如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public class Singleton &#123;  </span><br><span class="line">    private static class SingletonHolder &#123;  </span><br><span class="line">        private static final Singleton INSTANCE = new Singleton();  </span><br><span class="line">    &#125;  </span><br><span class="line">    private Singleton ()&#123;&#125;  </span><br><span class="line">    public static final Singleton getInstance() &#123;  </span><br><span class="line">        return SingletonHolder.INSTANCE;</span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>原理同饿汉式类似，不在啰嗦。</p>
+<h2 id="枚举类方法"><a href="#枚举类方法" class="headerlink" title="枚举类方法"></a>枚举类方法</h2><p>Java自身的枚举类能够保证全局只存在有限个实例，并能线程安全的访问。代码也非常简洁。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public enum SingleTon() &#123;</span><br><span class="line">  INSTANCE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文，我们介绍了6种单例模式的实现方法，我们可以根据不同的业务场景来实现单例模式。当然，实现单例模式的时候我们不光关注惰性加载和线程安全，序列化反序列化问题也是单例模式的一个问题，且看下回分解。</p>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><ul>
+<li><p><a href="http://wuchong.me/blog/2014/08/28/how-to-correctly-write-singleton-pattern/" target="_blank" rel="noopener">如何正确地写出单例模式</a></p>
+</li>
+<li><p><a href="http://www.infoq.com/cn/articles/double-checked-locking-with-delay-initialization" target="_blank" rel="noopener">双重检查锁定与延迟初始化</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/t894690230/article/details/50588129" target="_blank" rel="noopener">volatile关键字作用与内存可见性、指令重排序概述</a></p>
+</li>
+<li><p><a href="http://www.importnew.com/18872.html" target="_blank" rel="noopener">你真的会写单例模式吗——Java实现</a></p>
+</li>
+<li><p><a href="https://zh.wikipedia.org/zh-hans/单例模式" target="_blank" rel="noopener">单例模式- 维基百科，自由的百科全书</a></p>
+</li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/19/Java虚拟机-Java内存区域简介/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -322,7 +517,7 @@
       
         
           
-            <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示<br></p>
+            <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示<br><img src="/2017/09/19/Java虚拟机-Java内存区域简介/JVMMemoryStruct.jpg" title="Java内存划分示意图"></p>
 <h1 id="2-运行时数据区"><a href="#2-运行时数据区" class="headerlink" title="2. 运行时数据区"></a>2. 运行时数据区</h1><p>如上图所示，大体上我们可以把Java内存区域划分为方法区，堆区，Java虚拟机栈，本地方法栈，程序计数器。还有一个直接内存（DirectMemory, 也称堆外内存，它不属于运行时数据区的内容，使用过NIO的同学可能了解过）下面简要说明各个数据区域。</p>
 <h2 id="2-2-堆区"><a href="#2-2-堆区" class="headerlink" title="2.2 堆区"></a>2.2 堆区</h2><p>堆区(Java Heap)最大的作用就是存放对象实例，但是并不是所有对象一定要存放到堆上，随着JIT技术和逃逸分析技术的发展，对象可以存放到栈上。</p>
 <p>堆区被所有线程共享。</p>
@@ -620,7 +815,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">13</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -631,7 +826,7 @@
               
               <div class="site-state-item site-state-categories">
                 
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">分类</span>
                 
               </div>
@@ -642,7 +837,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">标签</span>
                 
               </div>

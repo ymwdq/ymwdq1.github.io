@@ -229,6 +229,223 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/29/IO进阶之磁盘阵列技术/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/01/29/IO进阶之磁盘阵列技术/" itemprop="url">IO进阶之磁盘阵列技术</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-29T16:46:39+08:00">
+                2018-01-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/" itemprop="url" rel="index">
+                    <span itemprop="name">IO</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/计算机组成原理/" itemprop="url" rel="index">
+                    <span itemprop="name">计算机组成原理</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/计算机组成原理/操作系统/" itemprop="url" rel="index">
+                    <span itemprop="name">操作系统</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当我们想提高程序或者一套系统的性能的时候，我们通常做的第一件事就是寻找系统的瓶颈在哪儿，这些瓶颈可以是网络、IO、CPU、内存、应用层的逻辑等。</p>
+<p>那么怎样才能提高 IO 性能呢，嗯，这是个很大的话题……从应用层的角度，我们可以使用合理的缓存策略、修改低效程序逻辑，阻塞非阻塞 IO 的合理使用等方法来优化，当然也可以操作系统层提高 IO 性能，比如定制系统缓存策略、调整现有系统缓存参数等。最后还有一个更“粗暴”的办法，就是从硬件层面进行提升比如把机械硬盘替换为 SSD（不差钱可以这么玩），分布式存储技术、或者使用我们今天要讲的 – 磁盘阵列技术。</p>
+<h2 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h2><p>下面列举主要内容</p>
+<ul>
+<li>磁盘阵列技术的概念</li>
+<li>磁盘阵列技术的用途</li>
+<li>磁盘阵列技术中的关键技术</li>
+<li>磁盘阵列技术的分类及其优缺点</li>
+<li>磁盘阵列技术的组合使用</li>
+<li>总结</li>
+<li>参考资料</li>
+</ul>
+<h2 id="磁盘阵列技术的概念"><a href="#磁盘阵列技术的概念" class="headerlink" title="磁盘阵列技术的概念"></a>磁盘阵列技术的概念</h2><p>这里直接给出维基百科的概念</p>
+<blockquote>
+<p>RAID (Redundant Array of Independent Disks, originally Redundant Array of Inexpensive Disks) is a data storage virtualization technology that combines multiple physical disk drive components into one or more logical units for the purposes of data redundancy, performance improvement, or both.</p>
+</blockquote>
+<p>RAID 本质上是一种虚拟化技术，通过这种技术能够将多块物理磁盘结合为一个（或多个）逻辑单元使用，达到高性能、数据冗余或者两者兼顾的目的。</p>
+<p>对于操作系统来说，可以把磁盘阵列看作是一个单一的、快速可靠的大容量磁盘驱动器。</p>
+<h2 id="磁盘阵列技术的用途"><a href="#磁盘阵列技术的用途" class="headerlink" title="磁盘阵列技术的用途"></a>磁盘阵列技术的用途</h2><p>RAID 技术主要有以下几个目的</p>
+<ul>
+<li>性能，提高吞吐量、相应时间等</li>
+<li>可靠性，数据备份、数据损毁后重建等</li>
+<li>大容量，通过横向拓展磁盘数目，增加数据存储容量</li>
+<li>性能、可靠性兼得</li>
+</ul>
+<p>实际使用的时候，我们需要综合目的、成本、性能、可靠性来选择合适的磁盘阵列技术</p>
+<h2 id="磁盘阵列中的关键技术"><a href="#磁盘阵列中的关键技术" class="headerlink" title="磁盘阵列中的关键技术"></a>磁盘阵列中的关键技术</h2><p>RAID 中主要有三个关键概念和技术：镜像（ Mirroring ）、数据条带（ Data Stripping ）和数据校验（ Data parity ）。</p>
+<ul>
+<li>镜像，将数据复制到多个磁盘，一方面可以提高可靠性，另一方面可并发从两个或多个副本读取数据来提高读性能。显而易见，镜像的写性能要稍低， 确保数据正确地写到多个磁盘需要更多的时间消耗。</li>
+<li>数据条带，将数据分片保存在多个不同的磁盘，多个数据分片共同组成一个完整数据副本，这与镜像的多个副本是不同的，它通常用于性能考虑。数据条带具有更高的并发粒度，当访问数据时，可以同时对位于不同磁盘上数据进行读写操作， 从而获得非常可观的 I/O 性能提升 。</li>
+<li>数据校验，利用冗余数据进行数据错误检测和修复，冗余数据通常采用海明码、异或操作等算法来计算获得。利用校验功能，可以很大程度上提高磁盘阵列的可靠性、鲁棒性和容错能力。不过，数据校验需要从多处读取数据并进行计算和对比，会影响系统性能。 </li>
+</ul>
+<p>不同等级的 RAID 采用一个或多个以上的三种技术，来获得不同的数据可靠性、可用性和 I/O 性能。至于设计何种 RAID （甚至新的等级或类型）或采用何种模式的 RAID ，需要在深入理解系统需求的前提下进行合理选择，综合评估可靠性、性能和成本来进行折中的选择。</p>
+<h2 id="磁盘阵列技术的分类"><a href="#磁盘阵列技术的分类" class="headerlink" title="磁盘阵列技术的分类"></a>磁盘阵列技术的分类</h2><p>RAID 技术可以分为 RAID0、RAID1、RAID2、RAID5等等，下面主要介绍三个具有代表性的磁盘阵列技术，分别是<strong>RAID0</strong>，<strong>RAID1</strong>，<strong>RAID5</strong></p>
+<h4 id="RAID0-技术"><a href="#RAID0-技术" class="headerlink" title="RAID0 技术"></a>RAID0 技术</h4><p>RAID0 是一种简单的、无数据校验的数据条带化技术。实际上不是一种真正的 RAID ，因为它并不提供任何形式的冗余策略。 RAID0 将所在磁盘条带化后组成大容量的存储空间，将数据分散存储在所有磁盘中，以独立访问方式实现多块磁盘的并读访问。由于可以并发执行 I/O 操作，总线带宽得到充分利用。再加上不需要进行数据校验， RAID0 的性能在所有 RAID 等级中是最高的。理论上讲，一个由 n 块磁盘组成的 RAID0 ，它的读写性能是单个磁盘性能的 n 倍，但由于总线带宽等多种因素的限制，实际的性能提升低于理论值。</p>
+<p><img src="/images/15172194743416.png" alt=""></p>
+<p>RAID0 具有低成本、高读写性能、 100% 的高存储空间利用率等优点，但是它不提供数据冗余保护，一旦数据损坏，将无法恢复。 因此， RAID0 一般适用于对性能要求严格但对数据安全性和可靠性不高的应用，如视频、音频存储、临时数据缓存空间等。</p>
+<h2 id="RAID1-技术"><a href="#RAID1-技术" class="headerlink" title="RAID1 技术"></a>RAID1 技术</h2><p>RAID1 称为镜像，它将数据完全一致地分别写到工作磁盘和镜像 磁盘，它的磁盘空间利用率为 50% 。 RAID1 在数据写入时，响应时间会有所影响，但是读数据的时候没有影响。 RAID1 提供了最佳的数据保护，一旦工作磁盘发生故障，系统自动从镜像磁盘读取数据，不会影响用户工作。</p>
+<p><img src="/images/15172195727665.png" alt=""></p>
+<p>RAID1 与 RAID0 刚好相反，是为了增强数据安全性使两块 磁盘数据呈现完全镜像，从而达到安全性好、技术简单、管理方便。 RAID1 拥有完全容错的能力，但实现成本高。 RAID1 应用于对顺序读写性能要求高以及对数据保护极为重视的应用，如对邮件系统的数据保护。</p>
+<h2 id="RAID5-技术"><a href="#RAID5-技术" class="headerlink" title="RAID5 技术"></a>RAID5 技术</h2><p>RAID5 应该是目前最常见的 RAID 等级，它的原理与 RAID4 相似，区别在于校验数据分布在阵列中的所有磁盘上，而没有采用专门的校验磁盘。对于数据和校验数据，它们的写操作可以同时发生在完全不同的磁盘上。因此， RAID5 不存在 RAID4 中的并发写操作时的校验盘性能瓶颈问题。另外， RAID5 还具备很好的扩展性。当阵列磁盘 数量增加时，并行操作量的能力也随之增长，可比 RAID4 支持更多的磁盘，从而拥有更高的容量以及更高的性能。</p>
+<p><img src="/images/15172196576208.png" alt=""></p>
+<p>RAID5 的磁盘上同时存储数据和校验数据，数据块和对应的校验信息存保存在不同的磁盘上，当一个数据盘损坏时，系统可以根据同一条带的其他数据块和对应的校验数据来重建损坏的数据。与其他 RAID 等级一样，重建数据时， RAID5 的性能会受到较大的影响。</p>
+<p>RAID5 兼顾存储性能、数据安全和存储成本等各方面因素，它可以理解为 RAID0 和 RAID1 的折中方案，是目前综合性能最佳的数据保护解决方案。 RAID5 基本上可以满足大部分的存储应用需求，数据中心大多采用它作为应用数据的保护方案。</p>
+<h2 id="RAID-的组合使用"><a href="#RAID-的组合使用" class="headerlink" title="RAID 的组合使用"></a>RAID 的组合使用</h2><p>有人可能会想：既然 RAID0 性能较好， RAID1 可靠性高，那么我直接用两个 RAID0 组一个 RAID1 不就可以组建一个两者优势兼顾的磁盘阵列吗？</p>
+<p>是的，我们可以把各种 RAID 技术组合使用，上面的这种组合方式我们称为 RAID10，其示意图如下：</p>
+<p><img src="/images/15172198613908.png" alt=""></p>
+<p>根据组合方式的不同，还可以有 RAID50、RADI60 等组合方式。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>以往我们 IO 性能的优化、可靠性的提升等的思路可能只停留在应用层面，物理层面的其实也有 RAID 这样的好技术。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="https://en.wikipedia.org/wiki/RAID" target="_blank" rel="noopener">RAID - Wikipedia</a></li>
+<li><a href="https://wsgzao.github.io/post/raid/" target="_blank" rel="noopener">RAID磁盘阵列配置和调优小结</a></li>
+<li><a href="http://blog.csdn.net/coslay/article/details/42248693" target="_blank" rel="noopener">磁盘阵列 RAID 技术原理详解</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/24/Java-回调浅析-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -333,8 +550,8 @@
       
         
           
-            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>今天在开讨论班的时候，再次到了 Java 回调的概念（嗯，名字很熟，但是心里问自己到底什么是回调，或则是 Java 的回调的时候，就开始含糊其辞了），其实大三在写 Android 的时候一直在接触回调，比如常见的 Button 的 onClick、Handler 方法等，只是没有特意留意过。</p>
-<p>大致搜了一下 Java 回调的概念，发现网上的 Java 回调教程，发现各种各样的版本都有，首先对于回调的概念有多个版本，代码更是千奇百怪。有的博主用了各种各样的比喻例子进行解释，比如打电话、回答问题之类的，但是我觉得，有时候直接给出概念更好，仅仅给比喻反而容易让人产生误解。<br>嗯呢，这时候果断用英文 google，才有了一个清晰的概念。</p>
+            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>今天在开讨论班的时候，提到了 Java 回调的概念（嗯，名字很熟，但是心里问自己到底什么是回调，或者是 Java 的回调的时候，就开始含糊了），其实大三在写 Android 的时候一直在接触回调，比如常见的 Button 的 onClick、Handler 方法等，只是没有特意留意过。但是叫人把回调的概念说明白，就开始迷糊了。因此特意复习了一下。</p>
+<p>大致搜了一下 Java 回调的概念，发现网上的 Java 回调教程各种各样的版本都有，造成成了一些现象，比如对于回调的概念有多个版本，其次代码更是千奇百怪。有的博主用了各种各样的比喻例子进行解释，比如打电话、回答问题之类的，但是我觉得，有时候直接给出概念更好，仅仅给比喻反而容易让人产生误解。<br>嗯，这时候果断用英文 google，才有了一个清晰的概念。</p>
 <h2 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h2><p>本文将大致包含以下内容</p>
 <ul>
 <li>回调的概念及分类</li>
@@ -348,14 +565,17 @@
 <p>恩恩，看了上面这段话概念及其分类就明白了。</p>
 <p>定义</p>
 <blockquote>
-<p>回调就是把可执行的代码通过参数传递到其他代码里。</p>
+<p>回调就是把可执行的代码通过参数传递到其他代码里，并且能够执行。</p>
 </blockquote>
-<p>在JavaScript或者Python中我们可以直接把函数当做一个参数传入到其他代码中，但是在Java中，函数并不是一等公民，因此我们得换一种方式实现回调那就是定义回调接口。具体如何实现以后谈到。</p>
+<p>在JavaScript或者Python中我们可以直接把函数当做一个参数传入到其他代码中，但是在Java中，函数是次等公民，因此我们得换一种方式实现回调那就是定义回调接口。具体如何实现以后谈到。</p>
 <p>分类</p>
 <blockquote>
 <p>同步回调、异步回调</p>
 </blockquote>
-<h2 id="Java中的回调"><a href="#Java中的回调" class="headerlink" title="Java中的回调"></a>Java中的回调</h2><p>前面说到，Java 可以通过定义回调接口的方式实现。我们直接通过一个例子来看<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">CallBack</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">doSomeThing</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CallBackA</span> <span class="keyword">implements</span> <span class="title">CallBack</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomeThing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"CallerA do something"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Caller</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 持有一个回调接口</span></span><br><span class="line">    <span class="keyword">private</span> CallBack callback;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">register</span><span class="params">(CallBack callback)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.callback = callback;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomeThing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>.callback != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">this</span>.callback.doSomeThing();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Caller caller = <span class="keyword">new</span> Caller();</span><br><span class="line">        CallBack callBack = <span class="keyword">new</span> CallBackA();</span><br><span class="line">        caller.register(callBack);</span><br><span class="line">        caller.doSomeThing();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="Java中的回调"><a href="#Java中的回调" class="headerlink" title="Java中的回调"></a>Java中的回调</h2><p>让我们先看看 Python 中的回调。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">get_square</span><span class="params">(val)</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="string">""" the callback """</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">return</span> val ** <span class="number">2</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">caller</span><span class="params">(func, val)</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">return</span> func(val)</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>caller(get_square, <span class="number">5</span>)</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+<p>前面说到，Java 可以通过定义回调接口的方式实现。我们直接通过一个例子来看</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">CallBack</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">doSomeThing</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CallBackA</span> <span class="keyword">implements</span> <span class="title">CallBack</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomeThing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"CallerA do something"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Caller</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 持有一个回调接口</span></span><br><span class="line">    <span class="keyword">private</span> CallBack callback;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">register</span><span class="params">(CallBack callback)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.callback = callback;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomeThing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>.callback != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">this</span>.callback.doSomeThing();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Caller caller = <span class="keyword">new</span> Caller();</span><br><span class="line">        CallBack callBack = <span class="keyword">new</span> CallBackA();</span><br><span class="line">        caller.register(callBack);</span><br><span class="line">        caller.doSomeThing();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>运行结果</p>
 <p><img src="/images/15168020751812.jpg" alt=""></p>
 <p>可能有点人会说，这不就是面向接口编程么？还有回调的“回”体现在哪儿？<br>首先，这段代码的确实现了“将代码作为参数传递的功能”，当我们向传入其他代码的时候，我们可以实现另一个 CallBackB。</p>
@@ -1394,14 +1614,14 @@
       
         
           
-            <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!<br>问题如下<br></p>
+            <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!<br>问题如下<br><img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/problem.jpg"></p>
 <h2 id="初步想法"><a href="#初步想法" class="headerlink" title="初步想法"></a>初步想法</h2><p>看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有想像中的简单)…</p>
 <p>为了证明我的想法，我特意找到了Lucene7.1 SmartChineseAnalyzer的官方文档…然后看到了</p>
-
+<img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/api.jpg">
 <p>哈哈，果然用了停用词表，果断写代码验证，并且把默认停用词表关了，看看效果…</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    StringReader reader = new StringReader(&quot;人生苦短_我用Python&quot;);</span><br><span class="line">    SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer(false);</span><br><span class="line">    try &#123;</span><br><span class="line">        AnalyzerUtil.displayTokens(analyzer.tokenStream(&quot;content&quot;, reader));</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>结果如下</p>
-
+<img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/res1.jpg" class="slug">
 <p>可以看到，下划线的当做逗号了…初步想法失败…</p>
 <h2 id="二次尝试"><a href="#二次尝试" class="headerlink" title="二次尝试"></a>二次尝试</h2><p>嗯…居然失败了…看来把问题想简单了，到那时哥好歹也是看过《Lucene in Action》的人，对Lucene的Analyzer基本原理算是略知一二，是时候展（zhuang）现（bi）真正的实力了。</p>
 <p>我们知道，Lucene的分析器一般会采用了一套分析链的机制进行分析，一般先经过reader读取字符串，然后经过tokenizer进行分词（分成一个个token），然后经过若干TokenFilter进行过滤（这里的过滤不一定要删减token，比如同义词扩展就可以使用filter进行）。</p>
@@ -1557,7 +1777,7 @@
           
             <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>装饰器模式一种动态地往一个类中添加新的行为的设计模式。就功能而言，修饰模式相比生成子类更为灵活，这样可以给某个对象而不是整个类添加一些功能。</p>
 <p>一般来说，我们想给某个类或者对象添加行为有两种方式：继承方式，组合方式。装饰器模式使用的是组合方式。</p>
-<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>首先看下装饰器模式的UML图<br></p>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>首先看下装饰器模式的UML图<br><img src="/2017/09/25/设计模式-装饰器模式/DecoratorUML.png" title="装饰器模式UML图"></p>
 <p>可以看到，装饰器模式主要有</p>
 <ul>
 <li>抽象被装饰组件</li>
@@ -1749,7 +1969,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 产品接口</span><br><span class="line"> */</span><br><span class="line">public interface Product &#123;</span><br><span class="line">  void use();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 工厂接口</span><br><span class="line"> */</span><br><span class="line">public interface Factory &#123;</span><br><span class="line">  Product createProduct();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * A产品</span><br><span class="line"> */</span><br><span class="line">public class ProductA implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductA&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * B产品</span><br><span class="line"> */</span><br><span class="line">public class ProductB implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductB&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * A产品工厂</span><br><span class="line"> */</span><br><span class="line">public class FactoryA implements Factory &#123;</span><br><span class="line">  public ProductA createProduct() &#123;</span><br><span class="line">    return new ProductA();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * B产品工厂</span><br><span class="line"> */</span><br><span class="line">public class FactoryB implements Factory&#123;</span><br><span class="line">  public Product createProduct() &#123;</span><br><span class="line">    return new ProductB();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="工厂方法模式的优点"><a href="#工厂方法模式的优点" class="headerlink" title="工厂方法模式的优点"></a>工厂方法模式的优点</h3><h3 id="工厂方法模式的缺点"><a href="#工厂方法模式的缺点" class="headerlink" title="工厂方法模式的缺点"></a>工厂方法模式的缺点</h3><h3 id="工厂方法模式的实际应用举例"><a href="#工厂方法模式的实际应用举例" class="headerlink" title="工厂方法模式的实际应用举例"></a>工厂方法模式的实际应用举例</h3><ul>
 <li><p>日志记录器<br>某系统日志记录器要求支持多种日志记录方式，如文件记录、数据库记录等，且用户可以根据要求动态选择日志记录方式， 现使用工厂方法模式设计该系统。</p>
-
+<img src="/2017/09/21/设计模式-工厂模式/loger.jpg" title="日志记录器">
 <ul>
 <li>JDBC中的工厂方法<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Connection conn=DriverManager.getConnection(&quot;jdbc:microsoft:sqlserver://loc</span><br><span class="line">alhost:1433; DatabaseName=DB;user=sa;password=&quot;);</span><br><span class="line">Statement statement=conn.createStatement();</span><br><span class="line">ResultSet rs=statement.executeQuery(&quot;select * from UserInfo&quot;);</span><br></pre></td></tr></table></figure>
 </li>
@@ -1769,7 +1989,7 @@
 <li>产品族<br>在抽象工厂模式中，产品族是指由同一个工厂生产的，位于不同产品等级结构中的一组产品，如海尔电器工厂生产的海尔电视机、海尔电冰箱，海尔电视机位于电视机产品等级结构中，海尔电冰箱位于电冰箱产品等级结构中。</li>
 </ul>
 <p>在工厂方法模式中，某一个具体工厂负责某一个具体的产品。但是现实中，我们可能需要某一个工厂负责某生产一个产品族的产品。这时使用抽象工厂会比较合适。这里我们使用UML图来表示抽象抽象工厂模式</p>
-
+<img src="/2017/09/21/设计模式-工厂模式/AbatractFactory.jpg" title="工厂模式示意图">
 <h3 id="抽象工厂的实际使用"><a href="#抽象工厂的实际使用" class="headerlink" title="抽象工厂的实际使用"></a>抽象工厂的实际使用</h3><ul>
 <li>情景模式的实现<br>比如黑夜模式下，需要对UI界面的多个元素就行修改，这时可以使用抽象共产模式</li>
 </ul>
@@ -1791,201 +2011,6 @@
 <li><a href="http://design-patterns.readthedocs.io/zh_CN/latest/creational_patterns/abstract_factory.html" target="_blank" rel="noopener">工厂方法模式-极客学院</a></li>
 <li><a href="http://www.runoob.com/design-pattern/factory-pattern.html" target="_blank" rel="noopener">工厂模式-RUNOOB.COM</a></li>
 <li><a href="http://www.cnblogs.com/zhouqiang/archive/2012/07/20/2601365.html" target="_blank" rel="noopener">Java设计模式——工厂设计模式</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/20/设计模式-单例模式/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="ymjkMaster">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="杨明的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/09/20/设计模式-单例模式/" itemprop="url">设计模式-并不简单的单例模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-20T15:12:33+08:00">
-                2017-09-20
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/设计模式/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>有时候我们在写程序的时候，我们希望在全局共用一个对象。比如一个负责读取全局配置文件的类A，读取一次配置文件之后，使用单例模式，我们可以得到一个全局唯一的对象a，其他对象读取配置时就不用重复实例化类A，并重复读取配置文件了。<br>总之，单例模式保证了某个类全局只存在一个实例。</p>
-<p>单例模式的实现一般可以分为以下几类</p>
-<ul>
-<li>懒汉式（非线程安全）</li>
-<li>懒汉式（线程安全）</li>
-<li>饿汉式</li>
-<li>双重检查锁</li>
-<li>静态内部类</li>
-<li>枚举</li>
-</ul>
-<p>下面简要介绍上述实现方法</p>
-<h2 id="懒汉式（非线程安全）"><a href="#懒汉式（非线程安全）" class="headerlink" title="懒汉式（非线程安全）"></a>懒汉式（非线程安全）</h2><p>先上代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 懒汉模式，非线程安全</span><br><span class="line"> */</span><br><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line"></span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      instance = new SingleTon();</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>懒汉模式只所以叫懒汉，是因为他使用了“惰性加载（Lazy Initialization）”的思想(好吧，这是我瞎猜的)<br>为了防止单例类被其他类new出来，我们将单例类的构造函数设为private。在单线程模式下，这个单例是可用的，但是一旦在多线程的情况下，可能会有多个线程进入if语句，导致单例产生多个实例。</p>
-<p>总之，该实现方式使用了惰性加载技术，但是非线程安全，不推荐使用。</p>
-<h2 id="懒汉式（线程安全）"><a href="#懒汉式（线程安全）" class="headerlink" title="懒汉式（线程安全）"></a>懒汉式（线程安全）</h2><p>在之前的基础上，为了保证懒汉式单例模式的线程安全，我们利用Java的synchronized关键字保证其线程安全。其代码如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line">  public static synchronized getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      instance = new SingleTon();</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>使用了synchronized关键字对getInstance方法修饰后，我们保证了懒汉式的线程安全性。但是该模式存在一个致命的问题，那就是性能问题。</p>
-<p>假设SingleTon类的instance已经被实例化了，如果有多个线程调用getInstance时，只有一个线程能获得锁，其他线程都不得不等待，这会影响系统的性能。</p>
-<p>总之，线程安全的懒汉式同样使用了惰性加载技术，并且是线程安全的，但是并发性能并不是很好。那么怎么解决这个问题，并能保证线程安全和使用懒加载呢？答案是“双重检验锁”。</p>
-<h2 id="双重检验锁"><a href="#双重检验锁" class="headerlink" title="双重检验锁"></a>双重检验锁</h2><p>先看代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon &#123;</span><br><span class="line">  private static SingleTon instance;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      synchronized(SingleTon.class) &#123;</span><br><span class="line">        if (instance == null) &#123;</span><br><span class="line">          instance = new SingleTon();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>如上面代码所示，如果第一次检查instance不为null，那么就不需要执行下面的加锁和初始化操作。因此可以大幅降低synchronized带来的性能开销。</p>
-<p>看似这段代码可以很好的实现单例模式了，但是这段代码有一个隐藏的BUG。原因在instance = new SingleTon()这句话，因为JVM在执行这句代码的时候，大概进行了以下3个步骤：</p>
-<ol>
-<li>为SingleTon分配内存。</li>
-<li>调用SingleTon的构造函数进行初始化。</li>
-<li>将instance指针指向分配好的地址。<br>理想执行顺序是1-&gt;2-&gt;3，之前的代码不会有问题。然而由于某些JIT编译器存在指令重排序，可能会出现1-&gt;3-&gt;2的指令执行顺序，这时可能会导致线程1执行完3以后，另外一个线程抢占使用instance，那么就会出现错误。</li>
-</ol>
-<p>解决这个问题的办法很简单，只需要将 instance 变量声明成 volatile 就可以了。<br>volatileu关键字有两个功能：</p>
-<ol>
-<li>保证变量的内存可见性</li>
-<li>局部阻止重排序的发生<br>这里我们用到了第二个功能，保证了单例模式的正常实现。修改后的代码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon &#123;</span><br><span class="line">  private volatile static SingleTon instance;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      synchronized(SingleTon.class) &#123;</span><br><span class="line">        if (instance == null) &#123;</span><br><span class="line">          instance = new SingleTon();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ol>
-<p>通过上面的代码，我们就可以愉快地使用单例模式了。这是一种比较线程安全且用到了惰性加载技术的单例模式实现方法。</p>
-<h2 id="饿汉模式"><a href="#饿汉模式" class="headerlink" title="饿汉模式"></a>饿汉模式</h2><p>这里介绍另外一种不适用惰性加载技术的单例模式实现方法，不使用惰性加载之后，代码也变得简洁了许多。代码如下。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class SingleTon() &#123;</span><br><span class="line">  private static final SingleTon instance = new SingleTon();</span><br><span class="line">  private SingleTon() &#123;&#125;</span><br><span class="line">  public static SingleTon getInstance() &#123;</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到，这种单例模式在类加载期间就会初始化instance实例，JVM会保证多个线程初始化一个类的时候只有一个类执行，所以我们不用担心线程安全问题。</p>
-<h2 id="静态内部类方法"><a href="#静态内部类方法" class="headerlink" title="静态内部类方法"></a>静态内部类方法</h2><p>代码如下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public class Singleton &#123;  </span><br><span class="line">    private static class SingletonHolder &#123;  </span><br><span class="line">        private static final Singleton INSTANCE = new Singleton();  </span><br><span class="line">    &#125;  </span><br><span class="line">    private Singleton ()&#123;&#125;  </span><br><span class="line">    public static final Singleton getInstance() &#123;  </span><br><span class="line">        return SingletonHolder.INSTANCE;</span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>原理同饿汉式类似，不在啰嗦。</p>
-<h2 id="枚举类方法"><a href="#枚举类方法" class="headerlink" title="枚举类方法"></a>枚举类方法</h2><p>Java自身的枚举类能够保证全局只存在有限个实例，并能线程安全的访问。代码也非常简洁。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public enum SingleTon() &#123;</span><br><span class="line">  INSTANCE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文，我们介绍了6种单例模式的实现方法，我们可以根据不同的业务场景来实现单例模式。当然，实现单例模式的时候我们不光关注惰性加载和线程安全，序列化反序列化问题也是单例模式的一个问题，且看下回分解。</p>
-<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><ul>
-<li><p><a href="http://wuchong.me/blog/2014/08/28/how-to-correctly-write-singleton-pattern/" target="_blank" rel="noopener">如何正确地写出单例模式</a></p>
-</li>
-<li><p><a href="http://www.infoq.com/cn/articles/double-checked-locking-with-delay-initialization" target="_blank" rel="noopener">双重检查锁定与延迟初始化</a></p>
-</li>
-<li><p><a href="http://blog.csdn.net/t894690230/article/details/50588129" target="_blank" rel="noopener">volatile关键字作用与内存可见性、指令重排序概述</a></p>
-</li>
-<li><p><a href="http://www.importnew.com/18872.html" target="_blank" rel="noopener">你真的会写单例模式吗——Java实现</a></p>
-</li>
-<li><p><a href="https://zh.wikipedia.org/zh-hans/单例模式" target="_blank" rel="noopener">单例模式- 维基百科，自由的百科全书</a></p>
-</li>
 </ul>
 
           
@@ -2072,7 +2097,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">13</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2083,7 +2108,7 @@
               
               <div class="site-state-item site-state-categories">
                 
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">分类</span>
                 
               </div>
@@ -2094,7 +2119,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">标签</span>
                 
               </div>

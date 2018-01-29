@@ -87,10 +87,14 @@
 <meta property="og:site_name" content="杨明的博客">
 <meta property="og:description" content="起因无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!问题如下 初步想法看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/problem.jpg">
+<meta property="og:image" content="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/api.jpg">
+<meta property="og:image" content="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/res1.jpg">
 <meta property="og:updated_time" content="2018-01-12T14:52:51.940Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="记一次Lucene中文分词器SmartChineseAnalyzer的源码探究">
 <meta name="twitter:description" content="起因无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!问题如下 初步想法看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有">
+<meta name="twitter:image" content="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/problem.jpg">
 
 
 
@@ -333,14 +337,14 @@
       
 
       
-        <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!<br>问题如下<br></p>
+        <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!<br>问题如下<br><img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/problem.jpg"></p>
 <h2 id="初步想法"><a href="#初步想法" class="headerlink" title="初步想法"></a>初步想法</h2><p>看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有想像中的简单)…</p>
 <p>为了证明我的想法，我特意找到了Lucene7.1 SmartChineseAnalyzer的官方文档…然后看到了</p>
-
+<img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/api.jpg">
 <p>哈哈，果然用了停用词表，果断写代码验证，并且把默认停用词表关了，看看效果…</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    StringReader reader = new StringReader(&quot;人生苦短_我用Python&quot;);</span><br><span class="line">    SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer(false);</span><br><span class="line">    try &#123;</span><br><span class="line">        AnalyzerUtil.displayTokens(analyzer.tokenStream(&quot;content&quot;, reader));</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>结果如下</p>
-
+<img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/res1.jpg" class="slug">
 <p>可以看到，下划线的当做逗号了…初步想法失败…</p>
 <h2 id="二次尝试"><a href="#二次尝试" class="headerlink" title="二次尝试"></a>二次尝试</h2><p>嗯…居然失败了…看来把问题想简单了，到那时哥好歹也是看过《Lucene in Action》的人，对Lucene的Analyzer基本原理算是略知一二，是时候展（zhuang）现（bi）真正的实力了。</p>
 <p>我们知道，Lucene的分析器一般会采用了一套分析链的机制进行分析，一般先经过reader读取字符串，然后经过tokenizer进行分词（分成一个个token），然后经过若干TokenFilter进行过滤（这里的过滤不一定要删减token，比如同义词扩展就可以使用filter进行）。</p>
@@ -476,7 +480,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">13</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -487,7 +491,7 @@
               
               <div class="site-state-item site-state-categories">
                 
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">分类</span>
                 
               </div>
@@ -498,7 +502,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">标签</span>
                 
               </div>

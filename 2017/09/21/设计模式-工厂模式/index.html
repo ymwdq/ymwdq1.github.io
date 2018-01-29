@@ -87,10 +87,13 @@
 <meta property="og:site_name" content="杨明的博客">
 <meta property="og:description" content="概述先照搬书上工厂模式的定义，即定义一个用于创建对象的接口，让子类决定实例化哪一个类，工厂方法使一个类的实例化延迟到其子类。工厂模式一共有三个小分类，分别是：简单工厂模式，工厂方法模式和抽象工厂模式。使用工厂模式一定有他的好处，那么具体好处是啥呢？我认为3个工厂模式有不同的好处，当然他们也不是完美无缺的。下面我们简单介绍3类工厂模式。 简单工厂模式通过一个工厂，产生不同的产品。如下代码所示。123">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2017/09/21/设计模式-工厂模式/loger.jpg">
+<meta property="og:image" content="http://yoursite.com/2017/09/21/设计模式-工厂模式/AbatractFactory.jpg">
 <meta property="og:updated_time" content="2018-01-12T14:52:51.942Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="设计模式-工厂模式">
 <meta name="twitter:description" content="概述先照搬书上工厂模式的定义，即定义一个用于创建对象的接口，让子类决定实例化哪一个类，工厂方法使一个类的实例化延迟到其子类。工厂模式一共有三个小分类，分别是：简单工厂模式，工厂方法模式和抽象工厂模式。使用工厂模式一定有他的好处，那么具体好处是啥呢？我认为3个工厂模式有不同的好处，当然他们也不是完美无缺的。下面我们简单介绍3类工厂模式。 简单工厂模式通过一个工厂，产生不同的产品。如下代码所示。123">
+<meta name="twitter:image" content="http://yoursite.com/2017/09/21/设计模式-工厂模式/loger.jpg">
 
 
 
@@ -345,7 +348,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 产品接口</span><br><span class="line"> */</span><br><span class="line">public interface Product &#123;</span><br><span class="line">  void use();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 工厂接口</span><br><span class="line"> */</span><br><span class="line">public interface Factory &#123;</span><br><span class="line">  Product createProduct();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * A产品</span><br><span class="line"> */</span><br><span class="line">public class ProductA implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductA&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * B产品</span><br><span class="line"> */</span><br><span class="line">public class ProductB implements Product &#123;</span><br><span class="line">  public void use() &#123;</span><br><span class="line">    System.out.println(&quot;use ProductB&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * A产品工厂</span><br><span class="line"> */</span><br><span class="line">public class FactoryA implements Factory &#123;</span><br><span class="line">  public ProductA createProduct() &#123;</span><br><span class="line">    return new ProductA();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * B产品工厂</span><br><span class="line"> */</span><br><span class="line">public class FactoryB implements Factory&#123;</span><br><span class="line">  public Product createProduct() &#123;</span><br><span class="line">    return new ProductB();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="工厂方法模式的优点"><a href="#工厂方法模式的优点" class="headerlink" title="工厂方法模式的优点"></a>工厂方法模式的优点</h3><h3 id="工厂方法模式的缺点"><a href="#工厂方法模式的缺点" class="headerlink" title="工厂方法模式的缺点"></a>工厂方法模式的缺点</h3><h3 id="工厂方法模式的实际应用举例"><a href="#工厂方法模式的实际应用举例" class="headerlink" title="工厂方法模式的实际应用举例"></a>工厂方法模式的实际应用举例</h3><ul>
 <li><p>日志记录器<br>某系统日志记录器要求支持多种日志记录方式，如文件记录、数据库记录等，且用户可以根据要求动态选择日志记录方式， 现使用工厂方法模式设计该系统。</p>
-
+<img src="/2017/09/21/设计模式-工厂模式/loger.jpg" title="日志记录器">
 <ul>
 <li>JDBC中的工厂方法<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Connection conn=DriverManager.getConnection(&quot;jdbc:microsoft:sqlserver://loc</span><br><span class="line">alhost:1433; DatabaseName=DB;user=sa;password=&quot;);</span><br><span class="line">Statement statement=conn.createStatement();</span><br><span class="line">ResultSet rs=statement.executeQuery(&quot;select * from UserInfo&quot;);</span><br></pre></td></tr></table></figure>
 </li>
@@ -365,7 +368,7 @@
 <li>产品族<br>在抽象工厂模式中，产品族是指由同一个工厂生产的，位于不同产品等级结构中的一组产品，如海尔电器工厂生产的海尔电视机、海尔电冰箱，海尔电视机位于电视机产品等级结构中，海尔电冰箱位于电冰箱产品等级结构中。</li>
 </ul>
 <p>在工厂方法模式中，某一个具体工厂负责某一个具体的产品。但是现实中，我们可能需要某一个工厂负责某生产一个产品族的产品。这时使用抽象工厂会比较合适。这里我们使用UML图来表示抽象抽象工厂模式</p>
-
+<img src="/2017/09/21/设计模式-工厂模式/AbatractFactory.jpg" title="工厂模式示意图">
 <h3 id="抽象工厂的实际使用"><a href="#抽象工厂的实际使用" class="headerlink" title="抽象工厂的实际使用"></a>抽象工厂的实际使用</h3><ul>
 <li>情景模式的实现<br>比如黑夜模式下，需要对UI界面的多个元素就行修改，这时可以使用抽象共产模式</li>
 </ul>
@@ -509,7 +512,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">13</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -520,7 +523,7 @@
               
               <div class="site-state-item site-state-categories">
                 
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">分类</span>
                 
               </div>
@@ -531,7 +534,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">标签</span>
                 
               </div>

@@ -87,10 +87,12 @@
 <meta property="og:site_name" content="杨明的博客">
 <meta property="og:description" content="1. 概述根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示 2. 运行时数据区如上图所示，大体上我们可以把Java内存区域划分为方法区，堆区，Java虚拟机栈，本地方法栈，程序计数器。还有一个直接内存（DirectMemory, 也称堆外内存，它不属">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2017/09/19/Java虚拟机-Java内存区域简介/JVMMemoryStruct.jpg">
 <meta property="og:updated_time" content="2018-01-12T14:52:51.943Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java虚拟机-Java运行时数据区">
 <meta name="twitter:description" content="1. 概述根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示 2. 运行时数据区如上图所示，大体上我们可以把Java内存区域划分为方法区，堆区，Java虚拟机栈，本地方法栈，程序计数器。还有一个直接内存（DirectMemory, 也称堆外内存，它不属">
+<meta name="twitter:image" content="http://yoursite.com/2017/09/19/Java虚拟机-Java内存区域简介/JVMMemoryStruct.jpg">
 
 
 
@@ -322,7 +324,7 @@
       
 
       
-        <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示<br></p>
+        <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示<br><img src="/2017/09/19/Java虚拟机-Java内存区域简介/JVMMemoryStruct.jpg" title="Java内存划分示意图"></p>
 <h1 id="2-运行时数据区"><a href="#2-运行时数据区" class="headerlink" title="2. 运行时数据区"></a>2. 运行时数据区</h1><p>如上图所示，大体上我们可以把Java内存区域划分为方法区，堆区，Java虚拟机栈，本地方法栈，程序计数器。还有一个直接内存（DirectMemory, 也称堆外内存，它不属于运行时数据区的内容，使用过NIO的同学可能了解过）下面简要说明各个数据区域。</p>
 <h2 id="2-2-堆区"><a href="#2-2-堆区" class="headerlink" title="2.2 堆区"></a>2.2 堆区</h2><p>堆区(Java Heap)最大的作用就是存放对象实例，但是并不是所有对象一定要存放到堆上，随着JIT技术和逃逸分析技术的发展，对象可以存放到栈上。</p>
 <p>堆区被所有线程共享。</p>
@@ -474,7 +476,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">13</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -485,7 +487,7 @@
               
               <div class="site-state-item site-state-categories">
                 
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">分类</span>
                 
               </div>
@@ -496,7 +498,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">标签</span>
                 
               </div>
