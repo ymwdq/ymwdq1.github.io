@@ -335,7 +335,7 @@
 <li>那么 n = 5 呢， 你是必胜的，为啥？我们知道 n = 4 时，谁先取石头谁输，你可以的“陷害”你的对手，即取一个石头，那么到你的对手那一轮的时候，n = 4, 这时他就输了。</li>
 <li>同理 n = 6 时, 你可以取走 2 个石头“陷害”的你的对手，迫使其失败。</li>
 </ol>
-<p>总结规律，可以发现，当有n个石头的时候，采取“迫使”对手失败的策略，我们之关心 n - 1、n - 2、n - 3时是否必赢或者必输。</p>
+<p>总结规律，可以发现“陷害”策略，即当有n个石头的时候，采取“迫使”对手失败的策略，我们之关心 n - 1、n - 2、n - 3时是否必赢或者必输。</p>
 <p>到这里我们很自然的就可以想到用动态规划的思想解题。递推式是</p>
 <ul>
 <li>dp[n] = false (false 表示必输，true 表必胜)，当dp[n - 1]、dp[n - 2]、dp[n - 3] 都为 true 的时候。</li>
@@ -349,7 +349,7 @@
 <h2 id="解法三"><a href="#解法三" class="headerlink" title="解法三"></a>解法三</h2><p>上面两个答案是我自己当时写的，其实还有更好的解法，时间复杂度和空间复杂度都为 o(1)</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">canWinNim</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> !(n % <span class="number">4</span> == <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>嗯，就是这么简单，仔细观察之后你会发现，确实存在这个规律，就是<strong>每隔4个必输，其余全是必胜</strong>，当然这个也可以证明的。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过这道题一共有两点感悟</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>进过一系列优化，我们成功的把时间、空间复杂度从 o(n) 降到了 o(1)，通过这道题一共有两点感悟</p>
 <ul>
 <li>动态规划的优化问题，在推出递推式之后，我们可以考虑使用若干个变量对之前的状态进行保存，而不是数组。此题我们只用了3个变量保存之前的状态。其实我们在求斐波那契数列的时候也可以用到此法。</li>
 <li>要善于观察规律。我们往往可以套用一些经典算法或者思想去解决问题，但是这并不意味这这些算法、思想一定是最优的，要具体问题具体分析。</li>
