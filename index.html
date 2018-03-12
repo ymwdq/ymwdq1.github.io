@@ -229,7 +229,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/07/LeetCode-刷题小记-Solution292-Nim-Game/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/12/趣味算法-记一次解小学数学奥赛题/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="ymjkMaster">
@@ -248,7 +248,379 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/03/07/LeetCode-刷题小记-Solution292-Nim-Game/" itemprop="url">LeetCode 刷题小记 - Solution292 Nim Game</a></h1>
+                <a class="post-title-link" href="/2018/03/12/趣味算法-记一次解小学数学奥赛题/" itemprop="url">趣味算法 - 记一次解小学数学奥赛题</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-12T21:58:44+08:00">
+                2018-03-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/算法/" itemprop="url" rel="index">
+                    <span itemprop="name">算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>偶然刷微博看到了著名眼科医生晒儿子做的数学奥赛题。题目是这样的。</p>
+<p><img src="/images/15208633895855.jpg" alt=""></p>
+<p>看到题的第一个反应，我去，这不是斐波那契数列么，现在的小学生都开始玩这个了？？？当然对于程序员来说这道题的解法可以说烂熟了，学习递归函数的典型例子，如果站在小学生的角度应该怎么解呢？</p>
+<h2 id="程序员的解法（递归版-优化版）"><a href="#程序员的解法（递归版-优化版）" class="headerlink" title="程序员的解法（递归版 + 优化版）"></a>程序员的解法（递归版 + 优化版）</h2><p>比较简单，这里直接给出 Java 版的解法了</p>
+<h4 id="递归版"><a href="#递归版" class="headerlink" title="递归版"></a>递归版</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Fibonacci</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">recursiveFib</span><span class="params">(<span class="keyword">int</span> i)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (i == <span class="number">1</span> || i == <span class="number">2</span>) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">return</span> recursiveFib(i - <span class="number">1</span>) + recursiveFib(i - <span class="number">2</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        System.out.println(recursiveFib(<span class="number">2015</span>) % <span class="number">3</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="优化版"><a href="#优化版" class="headerlink" title="优化版"></a>优化版</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Fibonacci</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">optimizedFib</span><span class="params">(<span class="keyword">int</span> i)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (i == <span class="number">1</span> || i == <span class="number">2</span>) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> pre1 = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> pre2 = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> next = pre1 + pre2;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">3</span>; j &lt;= i; j++) &#123;</span><br><span class="line">            next = pre1 + pre2;</span><br><span class="line">            pre1 = pre2;</span><br><span class="line">            pre2 = next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> next;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        System.out.println(optimizedFib(<span class="number">2015</span>) % <span class="number">3</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>算出来答案是 1</p>
+<h2 id="小学生的解法（归纳演绎法）"><a href="#小学生的解法（归纳演绎法）" class="headerlink" title="小学生的解法（归纳演绎法）"></a>小学生的解法（归纳演绎法）</h2><p>嗯，一般的小学生是不会写程序去计算的，哼，好歹哥也是北邮本科 + 研究生，不能满足于此。如果我们站在小学生的角度应该怎么解这道题呢？</p>
+<p>思考一会儿后，得到了简单解法。嗯，既然小学生不会写代码，找规律总会吧！</p>
+<p>让我们来看一下斐波那契对 3 取余的规律</p>
+<table>
+<thead>
+<tr>
+<th>斐波那契数列</th>
+<th>对 3 取余后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0</td>
+</tr>
+<tr>
+<td>5</td>
+<td>2</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2</td>
+</tr>
+<tr>
+<td>13</td>
+<td>1</td>
+</tr>
+<tr>
+<td>21</td>
+<td>0</td>
+</tr>
+<tr>
+<td>34</td>
+<td>1</td>
+</tr>
+<tr>
+<td>55</td>
+<td>1</td>
+</tr>
+<tr>
+<td>89</td>
+<td>2</td>
+</tr>
+<tr>
+<td>144</td>
+<td>0</td>
+</tr>
+<tr>
+<td>233</td>
+<td>2</td>
+</tr>
+<tr>
+<td>377</td>
+<td>2</td>
+</tr>
+<tr>
+<td>610</td>
+<td>1</td>
+</tr>
+<tr>
+<td>…</td>
+<td>…</td>
+</tr>
+</tbody>
+</table>
+<p>从上表不难看出对 3 取余后的数字总是按 1,1,2,0,2,2,1,0 为周期一直循环下去。</p>
+<p>所以到 2015 的时候 应该对应一个周期中第 2015 mod 8 个数字，即为 1</p>
+<h2 id="中学生的解法（初等代数推导-归纳演绎）"><a href="#中学生的解法（初等代数推导-归纳演绎）" class="headerlink" title="中学生的解法（初等代数推导 + 归纳演绎）"></a>中学生的解法（初等代数推导 + 归纳演绎）</h2><p>假设数列中 c 的前面两个数字为 a 和 b，那么可以证明 c mod 3 = (a mod 3 + b mod 3) mod 3，于是我们可以直接写出，从而避免了计算斐波那契数列的麻烦，取余后的数列即为1，1，2，0，2，2，1，0，1，1，…之后的解法同上。</p>
+<h2 id="大学生的解法（电子类专业）"><a href="#大学生的解法（电子类专业）" class="headerlink" title="大学生的解法（电子类专业）"></a>大学生的解法（电子类专业）</h2><p>作为本科北邮通信的孩纸，或者说本科电子类的同学来说，我们应该都学过一门叫《数字电路与逻辑设计》这门课，<strong>其中我们学过时序电路及 m 序列生成器</strong>。<strong>上面的递推式 c mod 3 = (a mod 3 + b mod 3) mod 3，正好对应时序表达式 c3 = (c1 mod 3 + c2 mod3) mod 3</strong>，但是具体的求解过程…以后有机会看书，给出。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>一个简单的小学奥赛题，我们可以给出不同学习阶段、不同专业的解法，想起来真是好玩。其中，程序员版和电子类专业版有点偏门。但是，上面所有的解法都离不开两个方面：<strong>归纳演绎、完备的领域知识</strong></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/08/Java反序列化漏洞浅析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/08/Java反序列化漏洞浅析/" itemprop="url">Java 反序列化漏洞浅析</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-08T20:38:24+08:00">
+                2018-03-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>Java 序列化技术常被用于对象的持久化存储、RMI(Remote Method Invocation) 等场景。今天复习 Java 序列化部分的时候，以外接触到了 Java 反序列化的漏洞。感觉挺有意思。</p>
+<h2 id="漏洞描述"><a href="#漏洞描述" class="headerlink" title="漏洞描述"></a>漏洞描述</h2>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/07/趣味算法 - LeetCode Solution.292 Nim Game/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/07/趣味算法 - LeetCode Solution.292 Nim Game/" itemprop="url">趣味算法 - LeetCode Solution.292 Nim Game</a></h1>
         
 
         <div class="post-meta">
@@ -507,7 +879,7 @@
         
           
             <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。</p>
-<p>今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难，github上也有很多开源的区块链实现，有的甚至号称几百行代码实现自己的区块链，所以当时就没有深挖下去。今天王博从技术的角度对区块链、比特币进行了分析让我受益颇多。</p>
+<p>今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别人的 = = …)，github上也有很多开源的区块链实现，有的甚至号称几百行 Python 代码实现自己的区xziil905–p\块链，所以当时就没有深挖下去。今天王博从技术的角度对区块链、比特币进行了分析让我受益颇多。</p>
 <p>要了解区块链，就要首先了解区块链使用的核心技术、核心思想，而密码学正式区块链技术的重要基础。这篇文章将只介绍区块链的密码学基础，不会过多的涉及区块链的具体流程、具体实施策略等。</p>
 <h2 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h2><p>本文将介绍如下几个区块链中使用到的密码学技术</p>
 <ul>
@@ -1694,363 +2066,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/18/mbp-2016-13寸-中配-使用数周有感/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="ymjkMaster">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="杨明的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/18/mbp-2016-13寸-中配-使用数周有感/" itemprop="url">mbp 2016 13寸 中配 使用数周有感</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-18T17:12:01+08:00">
-                2018-01-18
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/杂记/" itemprop="url" rel="index">
-                    <span itemprop="name">杂记</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="1-背景"><a href="#1-背景" class="headerlink" title="1. 背景"></a>1. 背景</h2><p>最近刚好发了奖学金，于是在v2ex上，花“巨资”购入二手mbp2016国行中配。其实心里想买16寸的，奈何希望省点钱给家里换几样家具，于是便买了二手13寸中配，老电脑t460s送给妹子用。使用数周后，也有了一点感想。</p>
-<h2 id="2-硬件-屏幕"><a href="#2-硬件-屏幕" class="headerlink" title="2. 硬件 - 屏幕"></a>2. 硬件 - 屏幕</h2><p>我看过的最棒的屏幕。分辨率高，不容易反光，色域广（直观的感受就是图片更加鲜艳有层次）。</p>
-<h2 id="3-硬件-键盘"><a href="#3-硬件-键盘" class="headerlink" title="3. 硬件 - 键盘"></a>3. 硬件 - 键盘</h2><p>网上对其评价褒贬不一，有的人说苹果的第二代蝶式键盘是史上第二烂的键盘（没错，第一烂是第一代），也有人说习惯了之后手感非常棒，都不想用机械了。我在入手前也试用过同学的mbp2016，也被其敲桌子的手感所震撼。经过几周的使用，发现习惯了这个键盘也还行。总结起来有一下特点</p>
-<ul>
-<li>生硬</li>
-<li>声音大（相比于其他笔记本键盘）</li>
-<li>键盘漏光少，这个很棒</li>
-<li>不容易误触</li>
-<li>清脆<br>有点小青轴的感觉，有时甚至觉得手感还不错。但是当我用回我的t460s的时候…啊，这顺滑温柔的感觉，好久没有过了。</li>
-</ul>
-<h2 id="4-硬件-touchbar"><a href="#4-硬件-touchbar" class="headerlink" title="4. 硬件 - touchbar"></a>4. 硬件 - touchbar</h2><p>网上对其评价也是褒贬不一。touchbar会根据不同的应用提供不同的功能，甚至可以自定义。比如进入safari的时候，touchbar可以提供新建标签按钮、显示历史记录的按钮、显示收藏按钮等。<br>个人认为：</p>
-<ul>
-<li>对于懂电脑的人或者专业人士（程序员/设计师）：用处不大<br>理由：touchbar提供的额外功能对于专业人士，几个快捷键就可以搞定，并可以形成肌肉记忆，比起touchbar输入更快，更方便。（最近发现了一个叫BetterTouchBar的软件，可以自定义按钮并且为按钮定制脚本，这就有意思多了）</li>
-<li>对于电脑使用不熟练的人士：好用<br>理由：把一些常用、重要，但是不太容易触发（对于非专业人士）到功能，集成到touchbar上，使用的时候轻轻一点，不用记快捷键，不用鼠标点点点。</li>
-</ul>
-<h2 id="5-硬件-内存"><a href="#5-硬件-内存" class="headerlink" title="5. 硬件 - 内存"></a>5. 硬件 - 内存</h2><p>8g实在不经我折腾，safari开8，9个标签，开个IDEA，开个DASH，开个vscode内存满了，并且交换区还有1g，频繁大量的交换，导致我每天的硬盘写入量过20g。</p>
-<h2 id="6-硬件-外观、重量与尺寸"><a href="#6-硬件-外观、重量与尺寸" class="headerlink" title="6. 硬件 - 外观、重量与尺寸"></a>6. 硬件 - 外观、重量与尺寸</h2><p>两个字：真TM的棒</p>
-<h2 id="7-硬件-触摸板"><a href="#7-硬件-触摸板" class="headerlink" title="7. 硬件 - 触摸板"></a>7. 硬件 - 触摸板</h2><p>两个字：真TM的棒</p>
-<h2 id="8-系统"><a href="#8-系统" class="headerlink" title="8. 系统"></a>8. 系统</h2><p>UI很好看，各种切换动画也很酷炫，但是其实不如windows流畅，偶尔卡顿，可能是我内存小的原因。</p>
-<h2 id="9-总结"><a href="#9-总结" class="headerlink" title="9. 总结"></a>9. 总结</h2><p>好用，值得购买。以后有钱上高配。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/12/Java内存泄漏分析/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="ymjkMaster">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="杨明的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/12/Java内存泄漏分析/" itemprop="url">Java内存泄漏分析</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-12T22:53:45+08:00">
-                2018-01-12
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index">
-                    <span itemprop="name">Java</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/杂记/" itemprop="url" rel="index">
-                    <span itemprop="name">杂记</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="1-背景"><a href="#1-背景" class="headerlink" title="1. 背景"></a>1. 背景</h2><p>前几个星期，在做实验室图片索引的项目都时候遇到了一个bug,在使用Lucene对图片的轮廓特征进行索引的时候，在索引到几十万张图片的时候Java因为OutOfMemory崩溃。因为图片的特征从BufferReader读入后是用的ArrayList进行存储的，当时我脑海里的第一个想法：会不会是因为ArrayList存了过多的数据，导致内存溢出呢，于是我调整策略，<code>每次读入10W张图片的特征，存入ArrayList,然后commit写入索引，循环往复</code>。</p>
-<p>然而结果并不是这样，即使分为多段存入，结果内存还是会溢出，<code>难道是那个地方内存泄漏了？</code>于是我便查找资料简单了解了复习了一下Java内存泄漏的知识。并在此作为简单记录。</p>
-<h2 id="2-大纲"><a href="#2-大纲" class="headerlink" title="2. 大纲"></a>2. 大纲</h2><p>我将从以下几个方面复习Java内存泄漏相关的知识。</p>
-<ol>
-<li>Java内存泄漏的定义</li>
-<li>Java内存泄漏的原因</li>
-<li>常见Java内存泄漏的场景</li>
-<li>Java内存泄漏的监控</li>
-<li>Java内存泄漏的预防</li>
-</ol>
-<h2 id="3-Java内存泄漏的定义"><a href="#3-Java内存泄漏的定义" class="headerlink" title="3. Java内存泄漏的定义"></a>3. Java内存泄漏的定义</h2><p>定义</p>
-<blockquote>
-<p>不再会被使用的对象的内存不能被回收，就是内存泄露。<br>Java中的内存泄露与C++中的表现有所不同。<br>在C++中，所有被分配了内存的对象，不再使用后，都必须程序员手动的释放他们。所以，每个类，都会含有一个析构函数，作用就是完成清理工作，如果我们忘记了某些对象的释放，就会造成内存泄露。<br>但是在Java中，我们不用（也没办法）自己释放内存，无用的对象由GC自动清理，这也极大的简化了我们的编程工作。但，实际有时候一些不再会被使用的对象，在GC看来不能被释放，就会造成内存泄露</p>
-</blockquote>
-<p>Java和c++有一个较大的区别就是，Java自带的垃圾回收器能够帮助我们管理内存，但不代表垃圾回收器能回收一切“垃圾”，如果我们程序使用不当，就可能导致我们预期中能够释放的空间无法得到释放，比如如下程序就可能导致内存泄漏。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addObjects</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    List&lt;Object&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; i++) &#123;</span><br><span class="line">        Object obj = <span class="keyword">new</span> Object();</span><br><span class="line">        list.add(obj):</span><br><span class="line">        obj = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>虽然我们已经把obj置为null，但由于list仍然持有obj在堆区相应的引用，堆区的内存仍然无法释放。</p>
-<h2 id="4-Java内存泄漏的原因"><a href="#4-Java内存泄漏的原因" class="headerlink" title="4. Java内存泄漏的原因"></a>4. Java内存泄漏的原因</h2><p>通常，会认为在堆上分配对象的代价比较大，但是GC却优化了这一操作：C++中，在堆上分配一块内存，会查找一块适用的内存加以分配，如果对象销毁，这块内存就可以重用；而Java中，就想一条长的带子，每分配一个新的对象，Java的“堆指针”就向后移动到尚未分配的区域。所以，Java分配内存的效率，可与C++媲美。<br>Java使用有向图对内存进行管理，如下图所示：</p>
-<p><img src="/images/15158097999402.jpg" alt=""></p>
-<p>如果一个对象不在被其他对象引用，被称为不可达，反之被称为不可达。图中obj1就是可达的，obj2就是不可达的。显然obj2是需要被回收的。<br>gc清理采用引用计数方式：当引用连接至新对象时，引用计数+1；当某个引用离开作用域或被设置为null时，引用计数-1，GC发现这个计数为0时，就回收其占用的内存。这个开销会在引用程序的整个生命周期发生，并且不能处理循环引用的情况。所以这种方式只是用来说明GC的工作方式，而不会被任何一种Java虚拟机应用。<br>但是往往由于我们代码的问题，使得堆区中我们不想要的对象无法得到有效释放。比如之前举的例子，因此便产生了内存泄漏。</p>
-<h2 id="5-内存泄漏的场景"><a href="#5-内存泄漏的场景" class="headerlink" title="5. 内存泄漏的场景"></a>5. 内存泄漏的场景</h2><ul>
-<li><p>容器类的使用<br>比如ArrayList、HashMap等</p>
-</li>
-<li><p>长链接的使用<br>比如数据库连接、网络连接、IO等</p>
-</li>
-<li><p>静态资源等使用<br>比如单例模式等使用。比如下面的例子</p>
-</li>
-</ul>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">A</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">A</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        B.getInstance().setA(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//B类采用单例模式</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">B</span></span>&#123;</span><br><span class="line">    <span class="keyword">private</span> A a;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> B instance = <span class="keyword">new</span> B();</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">B</span><span class="params">()</span></span>&#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> B <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> instance;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setA</span><span class="params">(A a)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.a = a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> A <span class="title">getA</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> a;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>内部类与外部模块的引用</li>
-</ul>
-<h2 id="6-Java内存泄漏的监控"><a href="#6-Java内存泄漏的监控" class="headerlink" title="6. Java内存泄漏的监控"></a>6. Java内存泄漏的监控</h2><p>目前，我们通常使用一些工具来检查Java程序的内存泄漏问题。市场上已有几种专业检查Java内存泄漏的工具，它们的基本工作原理大同小异，都是通过监测Java程序运行时，所有对象的申请、释放等动作，将内存管理的所有信息进行统计、分析、可视化。开发人员将根据这些信息判断程序是否有内存泄漏问题。这些工具包括Optimizeit Profiler，JProbe Profiler，JinSight , Rational 公司的Purify等。</p>
-<h2 id="7-Java内存泄漏的预防"><a href="#7-Java内存泄漏的预防" class="headerlink" title="7. Java内存泄漏的预防"></a>7. Java内存泄漏的预防</h2><ul>
-<li>在写程序的时候时刻关注申请的对象能否被正确释放或者回收，尤其是在之前提到的容易发生内存泄漏的场景下</li>
-<li>进行大容量测试，找出隐藏的内存泄漏。</li>
-<li>使用内存监控工具</li>
-</ul>
-<h2 id="8-参考文章"><a href="#8-参考文章" class="headerlink" title="8. 参考文章"></a>8. 参考文章</h2><ul>
-<li><a href="http://blog.csdn.net/anxpp/article/details/51325838" target="_blank" rel="noopener"> JAVA 内存泄露详解（原因、例子及解决）</a></li>
-<li><a href="https://www.jianshu.com/p/54b5da7c6816" target="_blank" rel="noopener">Java内存泄漏分析和解决</a></li>
-<li><a href="https://www.ibm.com/developerworks/cn/java/l-JavaMemoryLeak/" target="_blank" rel="noopener">Java的内存泄漏</a></li>
-<li><a href="http://blog.csdn.net/gzh0222/article/details/8538727" target="_blank" rel="noopener">Java内存泄漏的定位与分析</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2101,7 +2116,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2123,7 +2138,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">24</span>
+                  <span class="site-state-item-count">25</span>
                   <span class="site-state-item-name">标签</span>
                 
               </div>
