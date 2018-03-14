@@ -229,6 +229,187 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/13/海量数据处理问题（2）-Hash-分治/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/13/海量数据处理问题（2）-Hash-分治/" itemprop="url">海量数据处理问题（2）- Hash + 分治</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-13T23:12:24+08:00">
+                2018-03-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/算法/" itemprop="url" rel="index">
+                    <span itemprop="name">算法</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/算法/大数据处理/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据处理</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本文将介绍Hash + 分治策略处理海量数据中的使用</p>
+<h2 id="引例"><a href="#引例" class="headerlink" title="引例"></a>引例</h2><h3 id="1-求访问量最大的IP地址"><a href="#1-求访问量最大的IP地址" class="headerlink" title="1. 求访问量最大的IP地址"></a>1. 求访问量最大的IP地址</h3><p>给定一个大文件，文件存了海量IP，每个IP用换行符隔开，求出出现次数最多的IP。</p>
+<h4 id="1-1-求解步骤"><a href="#1-1-求解步骤" class="headerlink" title="1.1 求解步骤"></a>1.1 求解步骤</h4><ul>
+<li>Hash取模。顺序读取大文件的每一行，求对每一个IP求Hash后模1000的值，即 a = Hash(IP) % 1000，这样我们可以得到1000个不同的值，a0 到 a999，将相同a值的数据写到对应的文件中（f0,f1….f999）。这一步的作用是把相同的URL写入到相同的文件中，方便排序。</li>
+<li>顺序读取每一个小文件，对每一个文件使用一个HashMap统计各个 IP 出现的次数。</li>
+<li>求出每一个小文件 IP 出现次数最多的那个 IP</li>
+<li>最后汇总小文件统计出的最大次数 IP（一共1000个），求出次数最大的那个 IP 即为所求。</li>
+</ul>
+<h4 id="1-2-解析"><a href="#1-2-解析" class="headerlink" title="1.2 解析"></a>1.2 解析</h4><ul>
+<li>第一个步骤，我们相当于把数据做了一个归类，把相同属性的数据汇总到一个文件，方便进行计数和排序。</li>
+<li>第二个步骤，我们使用了HashMap 统计各个数据出现的次数</li>
+<li>第三个步骤，使用排序方法求 TopK，这里我们求的是 Top1，遍历一次即可</li>
+<li>第四个步骤，从 m 个小文件的 TopK 求出总体的 TopK</li>
+</ul>
+<h3 id="2-海量查询记录求-Top-10"><a href="#2-海量查询记录求-Top-10" class="headerlink" title="2. 海量查询记录求 Top 10"></a>2. 海量查询记录求 Top 10</h3><p>给定一个 1000W 查询记录（去重后有300W条记录），每条记录占 1 到 256 个字节，统计 Top10 查询记录，限定内存 1G。</p>
+<h4 id="求解步骤"><a href="#求解步骤" class="headerlink" title="求解步骤"></a>求解步骤</h4><ul>
+<li>HashMap 统计。假设每条记录占256字节，那么 300W 条记录大约占 256B * 3000000 ≈ 0.8GB，所以基本可以直接在内存里使用 HashMap 进行统计。</li>
+<li>堆排序，使用堆排序找出最大的 10 条记录。</li>
+</ul>
+<h3 id="3-统计出现频率最高的-100-个词"><a href="#3-统计出现频率最高的-100-个词" class="headerlink" title="3. 统计出现频率最高的 100 个词"></a>3. 统计出现频率最高的 100 个词</h3><p>给定一个 1GB 的词汇文件，统计出出现频率最高的 100 个词，限定内存 1MB。</p>
+<p>这道题的难点主要在于内存的限制，内存一旦限制住，就很难继续进行排序，计数等操作。因此这时可以采用散列 + 分治的策略。</p>
+<h4 id="求解步骤-1"><a href="#求解步骤-1" class="headerlink" title="求解步骤"></a>求解步骤</h4><ul>
+<li>散列。顺序读取文件，把每一个词汇散列到5000个小文件中，散列公式：Hash(query) % 5000。如果散列公式足够均匀，那么平均每个文件大小 200KB。足够我们放入内存进行计数、排序等操作。</li>
+<li>计数。使用 HashMap 或者字典树对每一个小文件的词汇进行次数统计。</li>
+<li>对每一个小文件，使用堆排序或者快排统计每个小文件的词频 Top100，并存入内存。</li>
+<li>再维护一个 100 大小的小顶堆，依次遍历这 5000 * 100 个数并更新小顶堆，最后求出 Top100。</li>
+</ul>
+<h2 id="举一反三"><a href="#举一反三" class="headerlink" title="举一反三"></a>举一反三</h2><h4 id="求相同的URL"><a href="#求相同的URL" class="headerlink" title="求相同的URL"></a>求相同的URL</h4><p>给定两个8G的文件，均包含了若干个 URL，用换行符隔开，那么请问如何求同时存在于这两个文件当中的 URL？</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>散列 + 分治的思想是我们处理内存、数据分散、最终排序的银弹。<br>通过散列，我们可以把分散的具有相同属性的数据汇总到一起（比如上题相同的查询词、相同的 IP 等等），汇总到一起之后方便我们进行计数、排序等操作。<br>通过分治，我们求出各个小部分的 TopK 最终通过堆排序等排序算法求出总体的 Topk，也可以通过对小文件进行排序，最后通过归并排序的方法，得到总体的排序。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/13/海量数据处理问题-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1857,177 +2038,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/23/JavaIO-之-InputStream-源码解析Java9/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="ymjkMaster">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="杨明的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/23/JavaIO-之-InputStream-源码解析Java9/" itemprop="url">JavaIO 之 InputStream 源码解析（Java 9 版本）</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-23T09:16:51+08:00">
-                2018-01-23
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java-IO/" itemprop="url" rel="index">
-                    <span itemprop="name">Java IO</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前面我们说到，JavaIO 框架类种类繁多，但是理解其中的装饰器模式，及其4大类中的其中一类，其他3类可以类比学习，这样学起来便容易多了。这4大类分别是 InputStream 系列、OutputStream 系列、Reader 系列和Writer 系列。让我们再次看看这幅图，可以看到，功能上4大类有很多相似之处，区别在于 Stream 主要处理字节流，Reader 和 Writer 处理字符流（每8个字节组成一个字符），InputStream 和 Reader 处理输入流（读文件、读管道等），另外两个处理输入流（写文件、写管道等）。</p>
-<p><img src="/images/15165434534097.png" alt=""></p>
-<h2 id="2-大纲"><a href="#2-大纲" class="headerlink" title="2. 大纲"></a>2. 大纲</h2><p>接下来通过学习 InputStream 及 FilterInputStream 源码，了解设计原则，装饰器模式，简单介绍InputStream 的子类，了解 InputStream 系列子类的功能。重要涉及以下几点：</p>
-<ul>
-<li>InputStream 源码解析</li>
-<li>InputStream 其他子类的简单介绍</li>
-<li>参考资料</li>
-</ul>
-<h2 id="3-InputStream源码解析（JDK9版本）"><a href="#3-InputStream源码解析（JDK9版本）" class="headerlink" title="3. InputStream源码解析（JDK9版本）"></a>3. InputStream源码解析（JDK9版本）</h2><p>InputStream 本身是个抽象类，其中的 read() 方法需要有子类实现，这个 read 可以是读文件、读管道、读缓存等等。并且实现了 Closeable接口，用于支持 try with resource 特性，保证资源的自动释放。<br><img src="/images/15166729576151.jpg" alt=""></p>
-<p>这里直接先看看大致结构。<br><img src="/images/15166715727124.jpg" alt=""></p>
-<h3 id="与“读”相关的代码"><a href="#与“读”相关的代码" class="headerlink" title="与“读”相关的代码"></a>与“读”相关的代码</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//读取一个字节（取值范围 0 到 255），用整型表示，如果返回-1代表读完。注意这个方法是个抽象方法，具体实现需要有子类实现。</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//读取并填充字节数组，返回填充的字节数</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">(<span class="keyword">byte</span> b[])</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> read(b, <span class="number">0</span>, b.length);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//读取并向指定字节数组填充，off 代表填充的起始位置，len 代表长度</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">(<span class="keyword">byte</span> b[], <span class="keyword">int</span> off, <span class="keyword">int</span> len)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="comment">// 进行常规的异常判断</span></span><br><span class="line">    <span class="keyword">if</span> (b == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (off &lt; <span class="number">0</span> || len &lt; <span class="number">0</span> || len &gt; b.length - off) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IndexOutOfBoundsException();</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (len == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果流已经读完，则直接返回</span></span><br><span class="line">    <span class="keyword">int</span> c = read();</span><br><span class="line">    <span class="keyword">if</span> (c == -<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    b[off] = (<span class="keyword">byte</span>)c;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 开始填充数组，返回填充的字节数</span></span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (; i &lt; len ; i++) &#123;</span><br><span class="line">            c = read();</span><br><span class="line">            <span class="keyword">if</span> (c == -<span class="number">1</span>) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            b[off + i] = (<span class="keyword">byte</span>)c;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 跳过 n 个字节，返回实际跳过的字节数，这里使用了缓存进行保存跳过的字节</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">skip</span><span class="params">(<span class="keyword">long</span> n)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">long</span> remaining = n;</span><br><span class="line">    <span class="keyword">int</span> nr;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (n &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 防止超出最大跳过范围</span></span><br><span class="line">    <span class="keyword">int</span> size = (<span class="keyword">int</span>)Math.min(MAX_SKIP_BUFFER_SIZE, remaining);</span><br><span class="line">    <span class="keyword">byte</span>[] skipBuffer = <span class="keyword">new</span> <span class="keyword">byte</span>[size];</span><br><span class="line">    <span class="keyword">while</span> (remaining &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 这里取最小主要是为了最后收尾的时候，进行正确的读取</span></span><br><span class="line">        nr = read(skipBuffer, <span class="number">0</span>, (<span class="keyword">int</span>)Math.min(size, remaining));</span><br><span class="line">        <span class="keyword">if</span> (nr &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        remaining -= nr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> n - remaining;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// 返回可用的字节数</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">available</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="mark相关代码"><a href="#mark相关代码" class="headerlink" title="mark相关代码"></a>mark相关代码</h3><p>mark、reset是组合使用的功能，我们读取的时候可以使用mark方法标记当前位置，以后再调用了reset方法之后，流可以恢复到标记mark时候的状态.</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 查看是否支持mark操作</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">markSupported</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 进行标记，readlimit 代表如果之后读取的字节数超过了 readlimit 数，Mark 的状态将会失效</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">mark</span><span class="params">(<span class="keyword">int</span> readlimit)</span> </span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// 重置当前的流，如果流没有被 mark 或者 mark 失效以后，抛出 IO 异常</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">reset</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"mark/reset not supported"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="资源释放相关代码"><a href="#资源释放相关代码" class="headerlink" title="资源释放相关代码"></a>资源释放相关代码</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 关闭（释放资源）实现了 Closeable 接口</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">将输入流转移到指定的输出流，返回转移的字节数，使用了缓存，有助于提高读写效率</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">transferTo</span><span class="params">(OutputStream out)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        Objects.requireNonNull(out, <span class="string">"out"</span>);</span><br><span class="line">        <span class="keyword">long</span> transferred = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">byte</span>[] buffer = <span class="keyword">new</span> <span class="keyword">byte</span>[DEFAULT_BUFFER_SIZE];</span><br><span class="line">        <span class="keyword">int</span> read;</span><br><span class="line">        <span class="keyword">while</span> ((read = <span class="keyword">this</span>.read(buffer, <span class="number">0</span>, DEFAULT_BUFFER_SIZE)) &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">            out.write(buffer, <span class="number">0</span>, read);</span><br><span class="line">            transferred += read;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> transferred;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="InputSteam重要子类"><a href="#InputSteam重要子类" class="headerlink" title="InputSteam重要子类"></a>InputSteam重要子类</h2><h3 id="FileIuputStream"><a href="#FileIuputStream" class="headerlink" title="FileIuputStream"></a>FileIuputStream</h3><p>负责文件的读取，使用 native code 实现了 read 等方法，注意这里的 IO 方式为同步阻塞 IO，而 NIO 可以的 IO 方式主要为同步非阻塞 IO，他们的区别以后的文章会谈到。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> read0();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">native</span> <span class="keyword">int</span> <span class="title">read0</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Reads a subarray as a sequence of bytes.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> b the data to be written</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> off the start offset in the data</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> len the number of bytes that are written</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@exception</span> IOException If an I/O error has occurred.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">native</span> <span class="keyword">int</span> <span class="title">readBytes</span><span class="params">(<span class="keyword">byte</span> b[], <span class="keyword">int</span> off, <span class="keyword">int</span> len)</span> <span class="keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Reads up to &lt;code&gt;b.length&lt;/code&gt; bytes of data from this input</span></span><br><span class="line"><span class="comment"> * stream into an array of bytes. This method blocks until some input</span></span><br><span class="line"><span class="comment"> * is available.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span>      b   the buffer into which the data is read.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span>     the total number of bytes read into the buffer, or</span></span><br><span class="line"><span class="comment"> *             &lt;code&gt;-1&lt;/code&gt; if there is no more data because the end of</span></span><br><span class="line"><span class="comment"> *             the file has been reached.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@exception</span>  IOException  if an I/O error occurs.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">(<span class="keyword">byte</span> b[])</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> readBytes(b, <span class="number">0</span>, b.length);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="FilterInputStream"><a href="#FilterInputStream" class="headerlink" title="FilterInputStream"></a>FilterInputStream</h3><p>IO 框架实现装饰器的重要类，它将流用作其基本数据源，它可以直接传输数据或提供一些额外的功能，没有实现具体的功能，只是持有父类对象，调用相应方法。其子类的功能以后会讲到。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
-<li><a href="https://docs.oracle.com/javase/tutorial/essential/io/index.html" target="_blank" rel="noopener">Oracle 官方文档 IO 部分</a></li>
-<li><a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html#suppressed-exceptions" target="_blank" rel="noopener">Oracle 官方文档 try with resource 部分</a></li>
-<li><a href="http://tutorials.jenkov.com/java-io/index.html" target="_blank" rel="noopener">Java IO tutorial - Jakob Jenkov</a></li>
-<li><a href="http://blog.csdn.net/qq_32166627/article/details/72818595" target="_blank" rel="noopener">InputStream和FileInputStream源码分析</a></li>
-<li><a href="">JDK 1.9源码</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -2073,7 +2088,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

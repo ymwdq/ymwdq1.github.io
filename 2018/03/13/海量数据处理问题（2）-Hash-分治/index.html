@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="密码学,区块链," />
+  <meta name="keywords" content="算法,趣味算法," />
 
 
 
@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="背景现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。 今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别">
-<meta name="keywords" content="密码学,区块链">
+<meta name="description" content="前言本文将介绍Hash + 分治策略处理海量数据中的使用 引例1. 求访问量最大的IP地址给定一个大文件，文件存了海量IP，每个IP用换行符隔开，求出出现次数最多的IP。 1.1 求解步骤 Hash取模。顺序读取大文件的每一行，求对每一个IP求Hash后模1000的值，即 a = Hash(IP) % 1000，这样我们可以得到1000个不同的值，a0 到 a999，将相同a值的数据写到对应的文件">
+<meta name="keywords" content="算法,趣味算法">
 <meta property="og:type" content="article">
-<meta property="og:title" content="区块链技术基础 - 1">
-<meta property="og:url" content="http://yoursite.com/2018/02/07/区块链技术基础-1/index.html">
+<meta property="og:title" content="海量数据处理问题（2）- Hash + 分治">
+<meta property="og:url" content="http://yoursite.com/2018/03/13/海量数据处理问题（2）-Hash-分治/index.html">
 <meta property="og:site_name" content="杨明的博客">
-<meta property="og:description" content="背景现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。 今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别">
+<meta property="og:description" content="前言本文将介绍Hash + 分治策略处理海量数据中的使用 引例1. 求访问量最大的IP地址给定一个大文件，文件存了海量IP，每个IP用换行符隔开，求出出现次数最多的IP。 1.1 求解步骤 Hash取模。顺序读取大文件的每一行，求对每一个IP求Hash后模1000的值，即 a = Hash(IP) % 1000，这样我们可以得到1000个不同的值，a0 到 a999，将相同a值的数据写到对应的文件">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-07T15:33:53.102Z">
+<meta property="og:updated_time" content="2018-03-14T02:01:39.852Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="区块链技术基础 - 1">
-<meta name="twitter:description" content="背景现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。 今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别">
+<meta name="twitter:title" content="海量数据处理问题（2）- Hash + 分治">
+<meta name="twitter:description" content="前言本文将介绍Hash + 分治策略处理海量数据中的使用 引例1. 求访问量最大的IP地址给定一个大文件，文件存了海量IP，每个IP用换行符隔开，求出出现次数最多的IP。 1.1 求解步骤 Hash取模。顺序读取大文件的每一行，求对每一个IP求Hash后模1000的值，即 a = Hash(IP) % 1000，这样我们可以得到1000个不同的值，a0 到 a999，将相同a值的数据写到对应的文件">
 
 
 
@@ -120,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/02/07/区块链技术基础-1/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/03/13/海量数据处理问题（2）-Hash-分治/"/>
 
 
 
 
 
-  <title>区块链技术基础 - 1 | 杨明的博客</title>
+  <title>海量数据处理问题（2）- Hash + 分治 | 杨明的博客</title>
   
 
 
@@ -233,7 +233,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/07/区块链技术基础-1/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/13/海量数据处理问题（2）-Hash-分治/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="ymjkMaster">
@@ -250,7 +250,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">区块链技术基础 - 1</h1>
+          <h1 class="post-title" itemprop="name headline">海量数据处理问题（2）- Hash + 分治</h1>
         
 
         <div class="post-meta">
@@ -262,8 +262,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-07T20:55:12+08:00">
-                2018-02-07
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-13T23:12:24+08:00">
+                2018-03-13
               </time>
             
 
@@ -285,8 +285,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/密码学/" itemprop="url" rel="index">
-                    <span itemprop="name">密码学</span>
+                  <a href="/categories/算法/" itemprop="url" rel="index">
+                    <span itemprop="name">算法</span>
                   </a>
                 </span>
 
@@ -296,8 +296,8 @@
                 
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/密码学/区块链/" itemprop="url" rel="index">
-                    <span itemprop="name">区块链</span>
+                  <a href="/categories/算法/大数据处理/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据处理</span>
                   </a>
                 </span>
 
@@ -333,18 +333,36 @@
       
 
       
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。</p>
-<p>今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别人的 = = …)，github上也有很多开源的区块链实现，有的甚至号称几百行 Python 代码实现自己的区xziil905–p\块链，所以当时就没有深挖下去。今天王博从技术的角度对区块链、比特币进行了分析让我受益颇多。</p>
-<p>要了解区块链，就要首先了解区块链使用的核心技术、核心思想，而密码学正式区块链技术的重要基础。这篇文章将只介绍区块链的密码学基础，不会过多的涉及区块链的具体流程、具体实施策略等。</p>
-<h2 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h2><p>本文将介绍如下几个区块链中使用到的密码学技术</p>
-<ul>
-<li>哈希技术</li>
-<li>非对称加密技术（椭圆曲线加密）</li>
-<li>数字签名技术</li>
-<li>数字证书技术</li>
-<li>零知识证明</li>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本文将介绍Hash + 分治策略处理海量数据中的使用</p>
+<h2 id="引例"><a href="#引例" class="headerlink" title="引例"></a>引例</h2><h3 id="1-求访问量最大的IP地址"><a href="#1-求访问量最大的IP地址" class="headerlink" title="1. 求访问量最大的IP地址"></a>1. 求访问量最大的IP地址</h3><p>给定一个大文件，文件存了海量IP，每个IP用换行符隔开，求出出现次数最多的IP。</p>
+<h4 id="1-1-求解步骤"><a href="#1-1-求解步骤" class="headerlink" title="1.1 求解步骤"></a>1.1 求解步骤</h4><ul>
+<li>Hash取模。顺序读取大文件的每一行，求对每一个IP求Hash后模1000的值，即 a = Hash(IP) % 1000，这样我们可以得到1000个不同的值，a0 到 a999，将相同a值的数据写到对应的文件中（f0,f1….f999）。这一步的作用是把相同的URL写入到相同的文件中，方便排序。</li>
+<li>顺序读取每一个小文件，对每一个文件使用一个HashMap统计各个 IP 出现的次数。</li>
+<li>求出每一个小文件 IP 出现次数最多的那个 IP</li>
+<li>最后汇总小文件统计出的最大次数 IP（一共1000个），求出次数最大的那个 IP 即为所求。</li>
 </ul>
-<h2 id="哈希技术"><a href="#哈希技术" class="headerlink" title="哈希技术"></a>哈希技术</h2>
+<h4 id="1-2-解析"><a href="#1-2-解析" class="headerlink" title="1.2 解析"></a>1.2 解析</h4><ul>
+<li>第一个步骤，我们相当于把数据做了一个归类，把相同属性的数据汇总到一个文件，方便进行计数和排序。</li>
+<li>第二个步骤，我们使用了HashMap 统计各个数据出现的次数</li>
+<li>第三个步骤，使用排序方法求 TopK，这里我们求的是 Top1，遍历一次即可</li>
+<li>第四个步骤，从 m 个小文件的 TopK 求出总体的 TopK</li>
+</ul>
+<h3 id="2-海量查询记录求-Top-10"><a href="#2-海量查询记录求-Top-10" class="headerlink" title="2. 海量查询记录求 Top 10"></a>2. 海量查询记录求 Top 10</h3><p>给定一个 1000W 查询记录（去重后有300W条记录），每条记录占 1 到 256 个字节，统计 Top10 查询记录，限定内存 1G。</p>
+<h4 id="求解步骤"><a href="#求解步骤" class="headerlink" title="求解步骤"></a>求解步骤</h4><ul>
+<li>HashMap 统计。假设每条记录占256字节，那么 300W 条记录大约占 256B * 3000000 ≈ 0.8GB，所以基本可以直接在内存里使用 HashMap 进行统计。</li>
+<li>堆排序，使用堆排序找出最大的 10 条记录。</li>
+</ul>
+<h3 id="3-统计出现频率最高的-100-个词"><a href="#3-统计出现频率最高的-100-个词" class="headerlink" title="3. 统计出现频率最高的 100 个词"></a>3. 统计出现频率最高的 100 个词</h3><p>给定一个 1GB 的词汇文件，统计出出现频率最高的 100 个词，限定内存 1MB。</p>
+<p>这道题的难点主要在于内存的限制，内存一旦限制住，就很难继续进行排序，计数等操作。因此这时可以采用散列 + 分治的策略。</p>
+<h4 id="求解步骤-1"><a href="#求解步骤-1" class="headerlink" title="求解步骤"></a>求解步骤</h4><ul>
+<li>散列。顺序读取文件，把每一个词汇散列到5000个小文件中，散列公式：Hash(query) % 5000。如果散列公式足够均匀，那么平均每个文件大小 200KB。足够我们放入内存进行计数、排序等操作。</li>
+<li>计数。使用 HashMap 或者字典树对每一个小文件的词汇进行次数统计。</li>
+<li>对每一个小文件，使用堆排序或者快排统计每个小文件的词频 Top100，并存入内存。</li>
+<li>再维护一个 100 大小的小顶堆，依次遍历这 5000 * 100 个数并更新小顶堆，最后求出 Top100。</li>
+</ul>
+<h2 id="举一反三"><a href="#举一反三" class="headerlink" title="举一反三"></a>举一反三</h2><h4 id="求相同的URL"><a href="#求相同的URL" class="headerlink" title="求相同的URL"></a>求相同的URL</h4><p>给定两个8G的文件，均包含了若干个 URL，用换行符隔开，那么请问如何求同时存在于这两个文件当中的 URL？</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>散列 + 分治的思想是我们处理内存、数据分散、最终排序的银弹。<br>通过散列，我们可以把分散的具有相同属性的数据汇总到一起（比如上题相同的查询词、相同的 IP 等等），汇总到一起之后方便我们进行计数、排序等操作。<br>通过分治，我们求出各个小部分的 TopK 最终通过堆排序等排序算法求出总体的 Topk，也可以通过对小文件进行排序，最后通过归并排序的方法，得到总体的排序。</p>
+
       
     </div>
     
@@ -361,9 +379,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/密码学/" rel="tag"># 密码学</a>
+            <a href="/tags/算法/" rel="tag"># 算法</a>
           
-            <a href="/tags/区块链/" rel="tag"># 区块链</a>
+            <a href="/tags/趣味算法/" rel="tag"># 趣味算法</a>
           
         </div>
       
@@ -376,8 +394,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/02/06/2017天池中间件性能大赛-经验与教训/" rel="next" title="2017天池中间件性能大赛 - 经验与教训">
-                <i class="fa fa-chevron-left"></i> 2017天池中间件性能大赛 - 经验与教训
+              <a href="/2018/03/13/海量数据处理问题-1/" rel="next" title="海量数据处理问题（1） - 挑战与策略">
+                <i class="fa fa-chevron-left"></i> 海量数据处理问题（1） - 挑战与策略
               </a>
             
           </div>
@@ -385,10 +403,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/03/07/趣味算法 - LeetCode Solution.292 Nim Game/" rel="prev" title="趣味算法 - LeetCode Solution.292 Nim Game">
-                趣味算法 - LeetCode Solution.292 Nim Game <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -520,7 +534,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#大纲"><span class="nav-number">2.</span> <span class="nav-text">大纲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#哈希技术"><span class="nav-number">3.</span> <span class="nav-text">哈希技术</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#引例"><span class="nav-number">2.</span> <span class="nav-text">引例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-求访问量最大的IP地址"><span class="nav-number">2.1.</span> <span class="nav-text">1. 求访问量最大的IP地址</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-求解步骤"><span class="nav-number">2.1.1.</span> <span class="nav-text">1.1 求解步骤</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-解析"><span class="nav-number">2.1.2.</span> <span class="nav-text">1.2 解析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-海量查询记录求-Top-10"><span class="nav-number">2.2.</span> <span class="nav-text">2. 海量查询记录求 Top 10</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#求解步骤"><span class="nav-number">2.2.1.</span> <span class="nav-text">求解步骤</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-统计出现频率最高的-100-个词"><span class="nav-number">2.3.</span> <span class="nav-text">3. 统计出现频率最高的 100 个词</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#求解步骤-1"><span class="nav-number">2.3.1.</span> <span class="nav-text">求解步骤</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#举一反三"><span class="nav-number">3.</span> <span class="nav-text">举一反三</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#求相同的URL"><span class="nav-number">3.0.1.</span> <span class="nav-text">求相同的URL</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
