@@ -79,18 +79,20 @@
 
 
 
-<meta name="description" content="背景在对海量数据进行处理的时候，我们会遇到平时我们不会关注问题，比如排序：如果是对100个数进行排序，我们可以写出各种花式的排序方法，那如果是对2.5亿个数进行排序呢，你会遇到内存不足、时间过长等各种问题；再比如求TopK，从1000个单词里统计出现次数最多的单词，我们同样有多种解法，但如果是统计1000万个呢？ 因此，对海量数据进行处理的时候，我们必须采取合适的策略、数据结构、算法才能达到理想的">
+<meta name="description" content="前言我们在使用google等搜索引擎或者淘宝、京东等购物网站的时候，经常会搜索框，我们在搜索框输入一个词汇之后，搜索框总是可以向下扩展一个列表，列出所有选项，你有想过这个功能是怎么实现的呢？ 没错，答案就是字典树，也叫 trie 树（当然现代的搜索引擎，引入了机器学习算法对结果进行优化，这部分就属于推荐系统的范畴了）。 trie 树的定义这里直接给出维基百科的定义  In computer sci">
 <meta name="keywords" content="算法,趣味算法">
 <meta property="og:type" content="article">
-<meta property="og:title" content="海量数据处理问题（1） - 挑战与策略">
-<meta property="og:url" content="http://yoursite.com/2018/03/13/海量数据处理问题-1/index.html">
+<meta property="og:title" content="海量数据处理问题(3) - 字典树">
+<meta property="og:url" content="http://yoursite.com/2018/03/14/海量数据处理问题-3-字典树/index.html">
 <meta property="og:site_name" content="杨明的博客">
-<meta property="og:description" content="背景在对海量数据进行处理的时候，我们会遇到平时我们不会关注问题，比如排序：如果是对100个数进行排序，我们可以写出各种花式的排序方法，那如果是对2.5亿个数进行排序呢，你会遇到内存不足、时间过长等各种问题；再比如求TopK，从1000个单词里统计出现次数最多的单词，我们同样有多种解法，但如果是统计1000万个呢？ 因此，对海量数据进行处理的时候，我们必须采取合适的策略、数据结构、算法才能达到理想的">
+<meta property="og:description" content="前言我们在使用google等搜索引擎或者淘宝、京东等购物网站的时候，经常会搜索框，我们在搜索框输入一个词汇之后，搜索框总是可以向下扩展一个列表，列出所有选项，你有想过这个功能是怎么实现的呢？ 没错，答案就是字典树，也叫 trie 树（当然现代的搜索引擎，引入了机器学习算法对结果进行优化，这部分就属于推荐系统的范畴了）。 trie 树的定义这里直接给出维基百科的定义  In computer sci">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-13T15:11:07.654Z">
+<meta property="og:image" content="http://yoursite.com/images/15210195660561.jpg">
+<meta property="og:updated_time" content="2018-03-14T09:43:41.647Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="海量数据处理问题（1） - 挑战与策略">
-<meta name="twitter:description" content="背景在对海量数据进行处理的时候，我们会遇到平时我们不会关注问题，比如排序：如果是对100个数进行排序，我们可以写出各种花式的排序方法，那如果是对2.5亿个数进行排序呢，你会遇到内存不足、时间过长等各种问题；再比如求TopK，从1000个单词里统计出现次数最多的单词，我们同样有多种解法，但如果是统计1000万个呢？ 因此，对海量数据进行处理的时候，我们必须采取合适的策略、数据结构、算法才能达到理想的">
+<meta name="twitter:title" content="海量数据处理问题(3) - 字典树">
+<meta name="twitter:description" content="前言我们在使用google等搜索引擎或者淘宝、京东等购物网站的时候，经常会搜索框，我们在搜索框输入一个词汇之后，搜索框总是可以向下扩展一个列表，列出所有选项，你有想过这个功能是怎么实现的呢？ 没错，答案就是字典树，也叫 trie 树（当然现代的搜索引擎，引入了机器学习算法对结果进行优化，这部分就属于推荐系统的范畴了）。 trie 树的定义这里直接给出维基百科的定义  In computer sci">
+<meta name="twitter:image" content="http://yoursite.com/images/15210195660561.jpg">
 
 
 
@@ -120,13 +122,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/03/13/海量数据处理问题-1/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/03/14/海量数据处理问题-3-字典树/"/>
 
 
 
 
 
-  <title>海量数据处理问题（1） - 挑战与策略 | 杨明的博客</title>
+  <title>海量数据处理问题(3) - 字典树 | 杨明的博客</title>
   
 
 
@@ -233,7 +235,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/13/海量数据处理问题-1/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/14/海量数据处理问题-3-字典树/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="ymjkMaster">
@@ -250,7 +252,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">海量数据处理问题（1） - 挑战与策略</h1>
+          <h1 class="post-title" itemprop="name headline">海量数据处理问题(3) - 字典树</h1>
         
 
         <div class="post-meta">
@@ -262,8 +264,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-13T22:26:23+08:00">
-                2018-03-13
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-14T17:01:54+08:00">
+                2018-03-14
               </time>
             
 
@@ -333,28 +335,29 @@
       
 
       
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在对海量数据进行处理的时候，我们会遇到平时我们不会关注问题，比如排序：如果是对100个数进行排序，我们可以写出各种花式的排序方法，那如果是对2.5亿个数进行排序呢，你会遇到内存不足、时间过长等各种问题；再比如求TopK，从1000个单词里统计出现次数最多的单词，我们同样有多种解法，但如果是统计1000万个呢？</p>
-<p>因此，对海量数据进行处理的时候，我们必须采取合适的策略、数据结构、算法才能达到理想的结果。</p>
-<h2 id="处理海量数据面临的挑战"><a href="#处理海量数据面临的挑战" class="headerlink" title="处理海量数据面临的挑战"></a>处理海量数据面临的挑战</h2><ul>
-<li>内存不足，数据往往一次性读入内存进行排序等操作。</li>
-<li>数据分散，数据可能分散在各个小文件当中，比如有一亿个URL，均匀分布在5个文件当中，求出现次数最多的URL。</li>
-<li>时间复杂度，这个很好理解，面对海量数据，时间性能差的算法缺点一定会暴露出来。</li>
-<li>空间复杂度，原因同上。</li>
-</ul>
-<h2 id="常见的问题"><a href="#常见的问题" class="headerlink" title="常见的问题"></a>常见的问题</h2><ul>
-<li>给定一个大文件求数据项出现次数TopK</li>
-<li>给定若干个文件求数据项出现次数TopK</li>
-<li>给定一个大文件对文件中的数据进行排序</li>
-<li>给定若干个大文件，求出若干个大文件的公共元素</li>
-</ul>
-<h2 id="常见处理方式"><a href="#常见处理方式" class="headerlink" title="常见处理方式"></a>常见处理方式</h2><p>下面将直接给出处理海量数据时常见的策略、数据结构、算法，具体介绍放到以后的文章中介绍。</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我们在使用google等搜索引擎或者淘宝、京东等购物网站的时候，经常会搜索框，我们在搜索框输入一个词汇之后，搜索框总是可以向下扩展一个列表，列出所有选项，你有想过这个功能是怎么实现的呢？</p>
+<p>没错，答案就是字典树，也叫 trie 树（当然现代的搜索引擎，引入了机器学习算法对结果进行优化，这部分就属于推荐系统的范畴了）。</p>
+<h2 id="trie-树的定义"><a href="#trie-树的定义" class="headerlink" title="trie 树的定义"></a>trie 树的定义</h2><p>这里直接给出维基百科的定义</p>
+<blockquote>
+<p>In computer science, a trie, also called digital tree and sometimes radix tree or prefix tree (as they can be searched by prefixes), is a kind of search tree—an ordered tree data structure that is used to store a dynamic set or associative array where the keys are usually strings.</p>
+</blockquote>
+<p>trie 一般长成这样</p>
+<p><img src="/images/15210195660561.jpg" alt=""></p>
+<p>简单来说，trie 树就是一种特殊的多叉树，里面存储的是字母等自然语言常见的元素。如果我们从树的根节点走到叶子节点，就可以组成一个完整的单词。</p>
+<h2 id="设计初衷"><a href="#设计初衷" class="headerlink" title="设计初衷"></a>设计初衷</h2><p>有人可能会问，为什么查找单词、词频统计可以用 trie 树，他有什么优势？试想，现有一堆单词，你需要查找这堆单词里是否存在 yangming 这个单词你会怎么做？首先肯定要找以 y 开头的单词，找到 y 开头的单词之后，我们再找第二个字母为 a 的单词，如此循环往复。</p>
+<p>这时，一个树的结构出现在脑海中！</p>
+<h2 id="trie-树的典型应用场景"><a href="#trie-树的典型应用场景" class="headerlink" title="trie 树的典型应用场景"></a>trie 树的典型应用场景</h2><ol>
+<li>前缀匹配。即使是在海量数据的情况下，亦可以做到 o(logn) 级别的匹配，如果使用朴素的遍历方法也要o(mn) 的时间复杂度。</li>
+<li>词频统计，尤其是大数据的情况下。可能有人要说了，词频统计简单啊，一个hash或者一个堆就可以打完收工，但问题来了，大数据情况下，内存有限呢，还能这么玩吗？所以这里我们就可以用trie树来压缩下空间，因为公共前缀都是用一个节点保存的。</li>
+<li>词汇查找。优势和上面一样，时间复杂度低，空间利用率高。</li>
+</ol>
+<h2 id="trie-树的实现"><a href="#trie-树的实现" class="headerlink" title="trie 树的实现"></a>trie 树的实现</h2><p>其实看到定义之后可以发现，trie 树的定义不像红黑树、B 树、AVL 树那样复杂，插入也是。下面直接给出字典树的 Python 简单实现。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Node</span><span class="params">()</span>:</span></span><br><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">       self.children = &#123;&#125;</span><br><span class="line">       self.value = <span class="keyword">None</span></span><br><span class="line">       </span><br><span class="line"> </span><br><span class="line"><span class="comment"># 插入操作</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">insert</span><span class="params">(root, string, value)</span>:</span></span><br><span class="line">    node = root</span><br><span class="line">    i = <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> i &lt; len(string):</span><br><span class="line">        <span class="keyword">if</span> string[i] <span class="keyword">in</span> node.children:</span><br><span class="line">            node = node.children[string[i]]</span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> i &lt; len(string):</span><br><span class="line">        node.children[string[i]] = Node()</span><br><span class="line">        node = node.children[string[i]]</span><br><span class="line">        i += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    node.value = value     </span><br><span class="line">    </span><br><span class="line">  <span class="comment"># 查找操作</span></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">find</span><span class="params">(node, key)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> char <span class="keyword">in</span> key:</span><br><span class="line">        <span class="keyword">if</span> char <span class="keyword">in</span> node.children:</span><br><span class="line">            node = node.children[char]</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">None</span></span><br><span class="line">    <span class="keyword">return</span> node.value</span><br></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>我觉得其实 trie 树也是一种特殊的 HashMap，相比传统的基于 Hash 的散列表，我觉得它有以下几点优势</p>
 <ul>
-<li>散列技术 + 分治思想结合使用</li>
-<li>堆排序算法</li>
-<li>字典树的应用</li>
-<li>位图的使用</li>
-<li>倒排索引</li>
-<li>布隆过滤器 </li>
+<li>空间利用率高</li>
+<li>不用处理冲突问题</li>
+<li>可以接受的查找性能</li>
 </ul>
 
       
@@ -388,8 +391,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/03/12/趣味算法-记一次解小学数学奥赛题/" rel="next" title="趣味算法 - 记一次解小学数学奥赛题">
-                <i class="fa fa-chevron-left"></i> 趣味算法 - 记一次解小学数学奥赛题
+              <a href="/2018/03/13/海量数据处理问题（2）-Hash-分治/" rel="next" title="海量数据处理问题（2）- Hash + 分治">
+                <i class="fa fa-chevron-left"></i> 海量数据处理问题（2）- Hash + 分治
               </a>
             
           </div>
@@ -397,10 +400,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/03/13/海量数据处理问题（2）-Hash-分治/" rel="prev" title="海量数据处理问题（2）- Hash + 分治">
-                海量数据处理问题（2）- Hash + 分治 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -532,7 +531,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理海量数据面临的挑战"><span class="nav-number">2.</span> <span class="nav-text">处理海量数据面临的挑战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常见的问题"><span class="nav-number">3.</span> <span class="nav-text">常见的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常见处理方式"><span class="nav-number">4.</span> <span class="nav-text">常见处理方式</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#trie-树的定义"><span class="nav-number">2.</span> <span class="nav-text">trie 树的定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#设计初衷"><span class="nav-number">3.</span> <span class="nav-text">设计初衷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#trie-树的典型应用场景"><span class="nav-number">4.</span> <span class="nav-text">trie 树的典型应用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#trie-树的实现"><span class="nav-number">5.</span> <span class="nav-text">trie 树的实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>

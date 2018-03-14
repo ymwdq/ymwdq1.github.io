@@ -229,6 +229,176 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/19/Java虚拟机-Java内存区域简介/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/09/19/Java虚拟机-Java内存区域简介/" itemprop="url">Java虚拟机-Java运行时数据区</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-19T09:12:26+08:00">
+                2017-09-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java虚拟机/" itemprop="url" rel="index">
+                    <span itemprop="name">Java虚拟机</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>根据Java虚拟机规范，Java程序在运行时，在内存中定义了若干个区域。这些区域的用途，生命周期各不相同。本文将尽量简要地介绍这些数据区，避免过多细节堆砌，具体细节以后再给出。数据区域可以由下图表示<br><img src="/2017/09/19/Java虚拟机-Java内存区域简介/JVMMemoryStruct.jpg" title="Java内存划分示意图"></p>
+<h1 id="2-运行时数据区"><a href="#2-运行时数据区" class="headerlink" title="2. 运行时数据区"></a>2. 运行时数据区</h1><p>如上图所示，大体上我们可以把Java内存区域划分为方法区，堆区，Java虚拟机栈，本地方法栈，程序计数器。还有一个直接内存（DirectMemory, 也称堆外内存，它不属于运行时数据区的内容，使用过NIO的同学可能了解过）下面简要说明各个数据区域。</p>
+<h2 id="2-2-堆区"><a href="#2-2-堆区" class="headerlink" title="2.2 堆区"></a>2.2 堆区</h2><p>堆区(Java Heap)最大的作用就是存放对象实例，但是并不是所有对象一定要存放到堆上，随着JIT技术和逃逸分析技术的发展，对象可以存放到栈上。</p>
+<p>堆区被所有线程共享。</p>
+<p>堆区不一定要分配在物理连续的内存中，只要其逻辑连续即可。</p>
+<p>当堆区没有足够内存完成实例分配时，并且堆无法扩展时，将会抛出OutOfMemoryError异常。</p>
+<p>谈到堆区时，就不得不提到垃圾回收技术，堆区是垃圾回收器管理的主要区域，因此也被称为GC堆。不同的垃圾回收算法会把堆区划分为各个不同的区域，比如新生代和老年代，具体细节将在垃圾回收算法部分详解。</p>
+<h2 id="2-3-方法区（静态区）"><a href="#2-3-方法区（静态区）" class="headerlink" title="2.3 方法区（静态区）"></a>2.3 方法区（静态区）</h2><p>方法区（Method Area）用于存储已被JVM加载的<strong>类信息、常量、静态变量、即时编译器编译后的代码</strong>等数据。当我们创建对象实例后，对象的类型信息存储在方法堆之中，实例数据存放在堆中；实例数据指的是在 Java 中创建的各种实例对象以及它们的值，类型信息指的是定义在 Java 代码中的常量、静态变量、以及在类中声明的各种方法、方法字段等等；同时可能包括即时编译器编译后产生的代码数据。</p>
+<p>方法区被所有线程共享。</p>
+<p>注意HotSpot虚拟机在实现时，将方法区的实现在堆区的永久代实现，因此有时候将方法区看作永久代的一部分。</p>
+<h3 id="2-3-1-运行时常量池"><a href="#2-3-1-运行时常量池" class="headerlink" title="2.3.1 运行时常量池"></a>2.3.1 运行时常量池</h3><p>用于存放编译期生成的各种字面量和符号引用，这部分内容将在类加载后进入方法区的运行时常量池中存放。</p>
+<h2 id="2-4-Java虚拟机栈"><a href="#2-4-Java虚拟机栈" class="headerlink" title="2.4 Java虚拟机栈"></a>2.4 Java虚拟机栈</h2><p>Java虚拟机栈(Java Virtual Machine Stack)由若干个Java虚拟机栈帧（Stack Frame）组成，而栈帧是JVM方法调用和方法执行的数据结构，每一个方法的调用和返回都对应着栈帧入栈出栈的过程。栈顶的栈帧称为当前栈帧（Current Stack Frame），对应当前方法。</p>
+<p>每一个栈帧主要由局部变量表，操作数栈，动态链接和返回地址和栈帧信息构成。</p>
+<h3 id="2-4-1-局部变量表"><a href="#2-4-1-局部变量表" class="headerlink" title="2.4.1 局部变量表"></a>2.4.1 局部变量表</h3><p>局部变量表用于存放<strong>方法参数</strong>和<strong>局部变量</strong>，虚拟机通过索引定位的方式使用局部变量表。</p>
+<p>变量槽（Variable Slot）是局部变量表的最小单位，没有强制规定大小为 32 位，虽然32位足够存放大部分类型的数据。一个 Slot 可以存放 boolean、byte、char、short、int、float、reference 和 returnAddress 8种类型。其中 reference 表示对一个对象实例的引用，通过它可以得到对象在Java 堆中存放的起始地址的索引和该数据所属数据类型在方法区的类型信息。returnAddress 则指向了一条字节码指令的地址。 对于64位的 long 和 double 变量而言，虚拟机会为其分配两个连续的 Slot 空间。</p>
+<h3 id="2-4-2-操作数栈"><a href="#2-4-2-操作数栈" class="headerlink" title="2.4.2 操作数栈"></a>2.4.2 操作数栈</h3><p>方法执行过程中，进行算术运算或者是调用其他的方法进行参数传递的时候是通过操作数栈进行的。</p>
+<p>如果线程请求的栈深度大于虚拟机规定的最大深度，将会抛出StackOverflowError异常；如果虚拟机栈可以动态扩展，并且扩展时无法申请到足够的内存，就会跑出OutOfMemoryError异常</p>
+<h3 id="2-4-3-动态链接"><a href="#2-4-3-动态链接" class="headerlink" title="2.4.3 动态链接"></a>2.4.3 动态链接</h3><p>每个栈帧都包含一个执行运行时常量池中该栈帧所属方法的引用，持有这个引用是为了支持方法调用过程中的动态连接（Dynamic Linking）。<br>Class 文件中存放了大量的符号引用，字节码中的方法调用指令就是以常量池中指向方法的符号引用作为参数。这些符号引用一部分会在类加载阶段或第一次使用时转化为直接引用，这种转化称为静态解析。另一部分将在每一次运行期间转化为直接引用，这部分称为动态连接。</p>
+<h3 id="2-4-4-方法返回地址"><a href="#2-4-4-方法返回地址" class="headerlink" title="2.4.4 方法返回地址"></a>2.4.4 方法返回地址</h3><p>当一个方法开始执行以后，只有两种方法可以退出当前方法：<br>当执行遇到返回指令，会将返回值传递给上层的方法调用者，这种退出的方式称为正常完成出口（Normal Method Invocation Completion），一般来说，调用者的PC计数器可以作为返回地址。<br>当执行遇到异常，并且当前方法体内没有得到处理，就会导致方法退出，此时是没有返回值的，称为异常完成出口（Abrupt Method Invocation Completion），返回地址要通过异常处理器表来确定。</p>
+<h3 id="2-4-5-栈帧信息"><a href="#2-4-5-栈帧信息" class="headerlink" title="2.4.5 栈帧信息"></a>2.4.5 栈帧信息</h3><p>虚拟机规范并没有规定具体虚拟机实现包含什么附加信息，这部分的内容完全取决于具体实现。在实际开发中，一般会把动态连接，方法返回地址和附加信息全部归为一类，称为栈帧信息。</p>
+<h2 id="2-5-程序计数器"><a href="#2-5-程序计数器" class="headerlink" title="2.5 程序计数器"></a>2.5 程序计数器</h2><p>每一个Java线程都拥有自己的程序计数器，他可以看作多当前线程所执行的字节码行号指示器。字节码解释器通过改变程序计数器的值来选取下一条需要执行的指令。分支、循环、跳转、异常处理、线程恢复等基础功能都需要依赖这个计数器完成。</p>
+<h2 id="2-6-直接内存"><a href="#2-6-直接内存" class="headerlink" title="2.6 直接内存"></a>2.6 直接内存</h2><p>直接内存（Direct Memory）并不是虚拟机运行时数据区的一部分，也不是Java虚拟机规范中定义的内存区域，但是这部分内存也被频繁地使用，而且也可能导致OutOfMemoryError 异常出现，所以我们放到这里一起讲解。<br>在JDK 1.4 中新加入了NIO（New Input/Output）类，引入了一种基于通道（Channel）与缓冲区（Buffer）的I/O 方式，它可以使用Native 函数库直接分配堆外内存，然后通过一个存储在Java 堆里面的DirectByteBuffer 对象作为这块内存的引用进行操作。这样能在一些场景中显著提高性能，因为避免了在Java 堆和Native 堆中来回复制数据。显然，本机直接内存的分配不会受到Java 堆大小的限制，但是，既然是内存，则肯定还是会受到本机总内存（包括RAM 及SWAP 区或者分页文件）的大小及处理器寻址空间的限制。服务器管理员配置虚拟机参数时，一般会根据实际内存设置-Xmx等参数信息，但经常会忽略掉直接内存，使得各个内存区域的总和大于物理内存限制（包括物理上的和操作系统级的限制），从而导致动态扩展时出现OutOfMemoryError异常。</p>
+<h2 id="2-7-本地方法栈"><a href="#2-7-本地方法栈" class="headerlink" title="2.7 本地方法栈"></a>2.7 本地方法栈</h2><p>本地方法栈与JVM栈发挥的作用是非常相似的，他们的区别是JVM栈为执行Java方法服务，本地方法栈为执行Native方法服务。</p>
+<h1 id="3-参考文章"><a href="#3-参考文章" class="headerlink" title="3. 参考文章"></a>3. 参考文章</h1><ul>
+<li><a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.6" target="_blank" rel="noopener">Oracle Java虚拟机规范</a></li>
+<li><a href="http://blog.csdn.net/zq602316498/article/details/38926607" target="_blank" rel="noopener">Java 虚拟机运行时栈帧结构</a></li>
+<li><a href="https://mritd.me/2016/03/22/Java-%E5%86%85%E5%AD%98%E4%B9%8B%E6%96%B9%E6%B3%95%E5%8C%BA%E5%92%8C%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0/" target="_blank" rel="noopener">Java 内存之方法区和运行时常量池</a></li>
+<li><a href="http://www.cnblogs.com/wade-luffy/p/5813747.html" target="_blank" rel="noopener">JVM的本地方法栈</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/18/设计模式-代理模式浅析/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -450,7 +620,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">22</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
