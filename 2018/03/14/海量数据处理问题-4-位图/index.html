@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Java,Java 序列化," />
+  <meta name="keywords" content="算法,趣味算法," />
 
 
 
@@ -79,18 +79,21 @@
 
 
 
-<meta name="description" content="背景Java 序列化技术常被用于对象的持久化存储、RMI(Remote Method Invocation) 等场景。今天复习 Java 序列化部分的时候，以外接触到了 Java 反序列化的漏洞。感觉挺有意思。 漏洞描述">
-<meta name="keywords" content="Java,Java 序列化">
+<meta name="description" content="前言位图法就是bitmap的缩写。所谓bitmap，就是用每一位来存放某种状态，适用于大规模数据，但数据状态又不是很多的情况。通常是用来判断某个数据存不存在的。 数据结构unsigned int bit[N];在这个数组里面，可以存储 N  sizeof(int)  8个数据，但是最大的数只能是N  sizeof(int)   8 - 1。假如，我们要存储的数据范围为0-15，则我们只需要使得N=">
+<meta name="keywords" content="算法,趣味算法">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Java 反序列化漏洞浅析">
-<meta property="og:url" content="http://yoursite.com/2018/03/08/Java反序列化漏洞浅析/index.html">
+<meta property="og:title" content="海量数据处理问题(4) - 位图">
+<meta property="og:url" content="http://yoursite.com/2018/03/14/海量数据处理问题-4-位图/index.html">
 <meta property="og:site_name" content="杨明的博客">
-<meta property="og:description" content="背景Java 序列化技术常被用于对象的持久化存储、RMI(Remote Method Invocation) 等场景。今天复习 Java 序列化部分的时候，以外接触到了 Java 反序列化的漏洞。感觉挺有意思。 漏洞描述">
+<meta property="og:description" content="前言位图法就是bitmap的缩写。所谓bitmap，就是用每一位来存放某种状态，适用于大规模数据，但数据状态又不是很多的情况。通常是用来判断某个数据存不存在的。 数据结构unsigned int bit[N];在这个数组里面，可以存储 N  sizeof(int)  8个数据，但是最大的数只能是N  sizeof(int)   8 - 1。假如，我们要存储的数据范围为0-15，则我们只需要使得N=">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-08T14:12:24.810Z">
+<meta property="og:image" content="http://yoursite.com/images/15210276263668.jpg">
+<meta property="og:image" content="http://yoursite.com/images/15210276633838.jpg">
+<meta property="og:updated_time" content="2018-03-14T11:53:01.699Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Java 反序列化漏洞浅析">
-<meta name="twitter:description" content="背景Java 序列化技术常被用于对象的持久化存储、RMI(Remote Method Invocation) 等场景。今天复习 Java 序列化部分的时候，以外接触到了 Java 反序列化的漏洞。感觉挺有意思。 漏洞描述">
+<meta name="twitter:title" content="海量数据处理问题(4) - 位图">
+<meta name="twitter:description" content="前言位图法就是bitmap的缩写。所谓bitmap，就是用每一位来存放某种状态，适用于大规模数据，但数据状态又不是很多的情况。通常是用来判断某个数据存不存在的。 数据结构unsigned int bit[N];在这个数组里面，可以存储 N  sizeof(int)  8个数据，但是最大的数只能是N  sizeof(int)   8 - 1。假如，我们要存储的数据范围为0-15，则我们只需要使得N=">
+<meta name="twitter:image" content="http://yoursite.com/images/15210276263668.jpg">
 
 
 
@@ -120,13 +123,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/03/08/Java反序列化漏洞浅析/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/03/14/海量数据处理问题-4-位图/"/>
 
 
 
 
 
-  <title>Java 反序列化漏洞浅析 | 杨明的博客</title>
+  <title>海量数据处理问题(4) - 位图 | 杨明的博客</title>
   
 
 
@@ -233,7 +236,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/08/Java反序列化漏洞浅析/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/14/海量数据处理问题-4-位图/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="ymjkMaster">
@@ -250,7 +253,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Java 反序列化漏洞浅析</h1>
+          <h1 class="post-title" itemprop="name headline">海量数据处理问题(4) - 位图</h1>
         
 
         <div class="post-meta">
@@ -262,8 +265,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-08T20:38:24+08:00">
-                2018-03-08
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-14T19:38:53+08:00">
+                2018-03-14
               </time>
             
 
@@ -285,8 +288,19 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index">
-                    <span itemprop="name">Java</span>
+                  <a href="/categories/算法/" itemprop="url" rel="index">
+                    <span itemprop="name">算法</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/算法/大数据处理/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据处理</span>
                   </a>
                 </span>
 
@@ -322,8 +336,27 @@
       
 
       
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>Java 序列化技术常被用于对象的持久化存储、RMI(Remote Method Invocation) 等场景。今天复习 Java 序列化部分的时候，以外接触到了 Java 反序列化的漏洞。感觉挺有意思。</p>
-<h2 id="漏洞描述"><a href="#漏洞描述" class="headerlink" title="漏洞描述"></a>漏洞描述</h2>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>位图法就是bitmap的缩写。所谓bitmap，就是用每一位来存放某种状态，适用于大规模数据，但数据状态又不是很多的情况。通常是用来判断某个数据存不存在的。</p>
+<h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2><p>unsigned int bit[N];<br>在这个数组里面，可以存储 N <em> sizeof(int) </em> 8个数据，但是最大的数只能是N <em> sizeof(int)  </em> 8 - 1。假如，我们要存储的数据范围为0-15，则我们只需要使得N=1，这样就可以把数据存进去。如下图：</p>
+<p><img src="/images/15210276263668.jpg" alt=""></p>
+<p>假如数据为[5，1，7，15，0，4，6，10]，则存入这个结构中的情况为：<br><img src="/images/15210276633838.jpg" alt=""></p>
+<h2 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h2><ul>
+<li>大量数字排序。</li>
+</ul>
+<p>给 10W 个不重复的整数，这些数的范围在 0 到 100W 之间，如果我们直接对这些数字使用快排，时间复杂度大约为 o(logn)，如果我们使用位图那么时间复杂度为 o(1)。</p>
+<ul>
+<li>大量数字去重。</li>
+</ul>
+<p>给 2.5 亿个整数，找出其中不重复的数字。</p>
+<p>采用2-Bitmap（每个数分配2bit，00表示不存在，01表示出现一次，10表示多次，11无意义）。其实，这里可以使用两个普 通的Bitmap，即第一个Bitmap存储的是整数是否出现，如果再次出现，则在第二个Bitmap中设置即可。这样的话，就可以使用简单的1- Bitmap了。</p>
+<h2 id="位图法的限制"><a href="#位图法的限制" class="headerlink" title="位图法的限制"></a>位图法的限制</h2><ul>
+<li>存储空间分配依赖于数字的范围</li>
+</ul>
+<p>如果数字特别大，那么就有可能无法分配足够的内存。</p>
+<ul>
+<li>可读性差</li>
+</ul>
+
       
     </div>
     
@@ -340,9 +373,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Java/" rel="tag"># Java</a>
+            <a href="/tags/算法/" rel="tag"># 算法</a>
           
-            <a href="/tags/Java-序列化/" rel="tag"># Java 序列化</a>
+            <a href="/tags/趣味算法/" rel="tag"># 趣味算法</a>
           
         </div>
       
@@ -355,8 +388,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/03/07/趣味算法 - LeetCode Solution.292 Nim Game/" rel="next" title="趣味算法 - LeetCode Solution.292 Nim Game">
-                <i class="fa fa-chevron-left"></i> 趣味算法 - LeetCode Solution.292 Nim Game
+              <a href="/2018/03/14/海量数据处理问题-3-字典树/" rel="next" title="海量数据处理问题(3) - 字典树">
+                <i class="fa fa-chevron-left"></i> 海量数据处理问题(3) - 字典树
               </a>
             
           </div>
@@ -364,10 +397,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/03/12/趣味算法-记一次解小学数学奥赛题/" rel="prev" title="趣味算法 - 记一次解小学数学奥赛题">
-                趣味算法 - 记一次解小学数学奥赛题 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -499,7 +528,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#漏洞描述"><span class="nav-number">2.</span> <span class="nav-text">漏洞描述</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据结构"><span class="nav-number">2.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用场景"><span class="nav-number">3.</span> <span class="nav-text">使用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图法的限制"><span class="nav-number">4.</span> <span class="nav-text">位图法的限制</span></a></li></ol></div>
             
 
           </div>
