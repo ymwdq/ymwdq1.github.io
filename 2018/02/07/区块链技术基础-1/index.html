@@ -102,10 +102,12 @@
 <meta property="og:site_name" content="杨明的博客">
 <meta property="og:description" content="背景现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。 今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-07T15:33:53.102Z">
+<meta property="og:image" content="http://yoursite.com/images/15224215103261.jpg">
+<meta property="og:updated_time" content="2018-03-31T04:34:13.664Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="区块链技术基础 - 1">
 <meta name="twitter:description" content="背景现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。 今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别">
+<meta name="twitter:image" content="http://yoursite.com/images/15224215103261.jpg">
 
 
 
@@ -364,7 +366,7 @@
 
       
         <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。</p>
-<p>今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别人的 = = …)，github上也有很多开源的区块链实现，有的甚至号称几百行 Python 代码实现自己的区xziil905–p\块链，所以当时就没有深挖下去。今天王博从技术的角度对区块链、比特币进行了分析让我受益颇多。</p>
+<p>今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别人的 = = …)，github上也有很多开源的区块链实现，有的甚至号称几百行 Python 代码实现自己的区块链，所以当时就没有深挖下去。今天王博从技术的角度对区块链、比特币进行了分析让我受益颇多。</p>
 <p>要了解区块链，就要首先了解区块链使用的核心技术、核心思想，而密码学正式区块链技术的重要基础。这篇文章将只介绍区块链的密码学基础，不会过多的涉及区块链的具体流程、具体实施策略等。</p>
 <h2 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h2><p>本文将介绍如下几个区块链中使用到的密码学技术</p>
 <ul>
@@ -374,7 +376,25 @@
 <li>数字证书技术</li>
 <li>零知识证明</li>
 </ul>
-<h2 id="哈希技术"><a href="#哈希技术" class="headerlink" title="哈希技术"></a>哈希技术</h2>
+<h2 id="哈希技术"><a href="#哈希技术" class="headerlink" title="哈希技术"></a>哈希技术</h2><h4 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h4><p>哈希技术也叫信息摘要技术，这里直接给出维基百科的定义</p>
+<blockquote>
+<p>A cryptographic hash function is a special class of hash function that has certain properties which make it suitable for use in cryptography. It is a mathematical algorithm that maps data of arbitrary size to a bit string of a fixed size (a hash) and is designed to be a one-way function, that is, a function which is infeasible to invert.</p>
+</blockquote>
+<p>简单来说，密码学中 hash 函数用于把一堆数据映射成若干个比特，并且无法恢复，也就是说 hash 函数式不可逆的。如下图所示。</p>
+<p><img src="/images/15224215103261.jpg" alt=""></p>
+<h4 id="性质"><a href="#性质" class="headerlink" title="性质"></a>性质</h4><ul>
+<li>确定性。相同的信息，只能产相同的信息摘要。</li>
+<li>速度快。产生信息摘要必须足够快。</li>
+<li>不可逆。除非采用 Hash 碰撞技术</li>
+<li>雪崩性。对原文的微小改动都会使信息摘要产生巨大变化</li>
+</ul>
+<h5 id="常见的哈希函数"><a href="#常见的哈希函数" class="headerlink" title="常见的哈希函数"></a>常见的哈希函数</h5><ul>
+<li>SHA 系列</li>
+</ul>
+<ul>
+<li>MD5 系列</li>
+</ul>
+
       
     </div>
     
@@ -495,7 +515,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-count">24</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -506,7 +526,7 @@
             
             <div class="site-state-item site-state-categories">
               
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">19</span>
                 <span class="site-state-item-name">分类</span>
               
             </div>
@@ -517,7 +537,7 @@
             
             <div class="site-state-item site-state-tags">
               
-                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-count">27</span>
                 <span class="site-state-item-name">标签</span>
               
             </div>
@@ -552,7 +572,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#大纲"><span class="nav-number">2.</span> <span class="nav-text">大纲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#哈希技术"><span class="nav-number">3.</span> <span class="nav-text">哈希技术</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#大纲"><span class="nav-number">2.</span> <span class="nav-text">大纲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#哈希技术"><span class="nav-number">3.</span> <span class="nav-text">哈希技术</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#定义"><span class="nav-number">3.0.1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#性质"><span class="nav-number">3.0.2.</span> <span class="nav-text">性质</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#常见的哈希函数"><span class="nav-number">3.0.2.1.</span> <span class="nav-text">常见的哈希函数</span></a></li></ol></li></ol></li></ol></li></ol></div>
             
 
           </div>

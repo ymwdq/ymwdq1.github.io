@@ -260,6 +260,208 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/27/记一次系统瓶颈排查与优化/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/06/27/记一次系统瓶颈排查与优化/" itemprop="url">记一次系统瓶颈排查与优化</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-27T16:04:06+08:00">
+                2018-06-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/性能优化/" itemprop="url" rel="index">
+                    <span itemprop="name">性能优化</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/性能优化/故障排查/" itemprop="url" rel="index">
+                    <span itemprop="name">故障排查</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>事情源于一个十分坑爹的 BUG，实验室下载了百万计的 APK 并解析存入数据库，存入数据库的其中一项就是 APK 的 MD5 值。</p>
+<p>这没啥大不了的，直到有一天突然发现，前人写的 APK 解析工具类在算 MD5 值的时候少取了 1 位，本来存入数据的应该是一个 128 字节的字符串，但是实际存入的是一个 127 位的字符串。</p>
+<p>所以…实验室博士们经过商讨之后决定，对 200TB 的 APK 进行重新解析，这酸爽…</p>
+<h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>重新解析过程很简单</p>
+<ol>
+<li>从磁盘阵列读数据</li>
+<li>读完一个 APK 后，解析</li>
+<li>然后重新 UPDATE 数据库</li>
+</ol>
+<p>这个程序是师弟写的。写的时候搞了几十个测试 APK 放到本地，然后写程序。写出来之后发现一个问题，就是很慢，一分钟最多处理 10 个左右 APK，不符合常理。师弟也尝试了多种办法。</p>
+<h4 id="师弟的第一个方法：多线程"><a href="#师弟的第一个方法：多线程" class="headerlink" title="师弟的第一个方法：多线程"></a>师弟的第一个方法：多线程</h4><p>在本地用了一个固定的 10 个线程的线程池，尝试用多线程处理，结果还是一分钟处理 10 个左右。照这个速度下去一年都跑不完。师弟百思不得其解，于是师弟有了第二个想法。</p>
+<h4 id="师弟的第二个方法：把程序放到服务器跑"><a href="#师弟的第二个方法：把程序放到服务器跑" class="headerlink" title="师弟的第二个方法：把程序放到服务器跑"></a>师弟的第二个方法：把程序放到服务器跑</h4><p>实验室的服务器配置极高，内存有 200+G、CPU 核心数 64 核，4 路 GTX 1080Ti。平时一般用来跑深度学习等大型任务。放到服务器跑了之后，结果更奇葩…上了服务器处理速度不仅没有提高，反而变慢了，变成了一分钟处理 8 个左右…</p>
+<p>师弟百思不得其解，最后找到了我。</p>
+<h2 id="瓶颈定位"><a href="#瓶颈定位" class="headerlink" title="瓶颈定位"></a>瓶颈定位</h2><p>师弟找到我之后，我首先怀疑是不是他的多线程代码部分是不是有问题，所以首先看了一下他写的代码，发现多线程写的没啥大毛病。一开始我也疑惑了一下，但是事实摆在面前：</p>
+<ol>
+<li>程序处理速度异常慢，多线程不解决，肯定某个地方出问题了</li>
+<li>放到服务器上跑，速度不增反降。</li>
+</ol>
+<p>思考一下后，我实现了我的解决方案</p>
+<h4 id="使用-htop、iostat-命令初步观察"><a href="#使用-htop、iostat-命令初步观察" class="headerlink" title="使用 htop、iostat 命令初步观察"></a>使用 htop、iostat 命令初步观察</h4><p>遇到这种性能问题，我认为应该首先定位故障、瓶颈出在哪儿，而不是一味的祭出多线程、对配置之类的想法。所以我让师弟在运行程序的时候用 htop、iostat 命令，观察一下程序资源占用状况。</p>
+<p>观察到的结果是：CPU 占用率不到 150 %，磁盘占用率比较高。这时初步有了推断：程序的瓶颈不在 CPU，而在于磁盘 IO，这就解释了为什么多线程起不了作用。</p>
+<h4 id="编写测试类验证想法"><a href="#编写测试类验证想法" class="headerlink" title="编写测试类验证想法"></a>编写测试类验证想法</h4><p>为了验证我的想法，我再师弟写的程序里搞了几个计时器，对多文件操作、解析操作和写回数据库操作做了计时。结果如下</p>
+<ul>
+<li>读文件操作：4s - 10s 不等</li>
+<li>解析操作：几十毫秒</li>
+<li>写会数据库：几十毫秒</li>
+</ul>
+<p>果然，多线程不起作用的原因找到了，程序瓶颈在磁盘 IO 那里，不管你开多少个线程，磁盘的读取速度总是有限的，这就导致程序的处理速度和 IO 的性能成正比，因此要优化程序应该从提高磁盘 IO 入手而不是一味使用多线程。</p>
+<h4 id="为什么上了服务器跑反而变慢了"><a href="#为什么上了服务器跑反而变慢了" class="headerlink" title="为什么上了服务器跑反而变慢了"></a>为什么上了服务器跑反而变慢了</h4><p>但是还有一个问题没有解决，为啥相同的程序放到了服务器跑变得更慢了。我仔细看了师弟的代码，发现在服务器上跑的时候，多了一步从分布式文件系统下载 APK 文件的操作。</p>
+<p>本地跑的流程为：读取APK -&gt; 算哈希 -&gt; 写回数据库（因为师弟已经事先下了几十个测试 APK，所以不用下载）<br>服务器上跑的流程为：从分布式文件系统下载 -&gt; 读取APK -&gt; 算哈希 -&gt; 写回数据库</p>
+<p>这就导致从服务器上跑速度反而更慢。</p>
+<h4 id="真正的瓶颈定位：交换机-RJ45-网线"><a href="#真正的瓶颈定位：交换机-RJ45-网线" class="headerlink" title="真正的瓶颈定位：交换机 + RJ45 网线"></a>真正的瓶颈定位：交换机 + RJ45 网线</h4><p>理论上跑的流程为：从分布式文件系统下载 -&gt; 读取APK -&gt; 算哈希 -&gt; 写回数据库。这几个步骤里面，最耗时的是哪个呢？</p>
+<p>我心中的答案是：下载，其次是从磁盘读取。因为一款普通机械硬盘的读取速度通常可以达到 几百兆每秒，而下载的时候，如果下载走普通网线，其速度极限是 1000Gb/s 约等于 125MB/s。</p>
+<p>为了验证想法。我特地跑到了机房，观察服务器与磁盘阵列连接方式。观察到如下情况</p>
+<ul>
+<li>实验室磁盘阵列使用的硬盘架通过 RJ45 网线出来。</li>
+<li>RJ45 网线在连到交换机上</li>
+</ul>
+<p>于是就验证了我的想法，RJ45 网线的极限才 1000Gb/s 约等于 125MB/s，所以不管怎么堆服务器配置、搞多线程都是没用的。因为元数据获取的速度极限就是 125MB/s，假如一个 APK 平均大小为 10MB，那么每秒最多能够处理的极限就是：12 个。</p>
+<h2 id="问题的解决"><a href="#问题的解决" class="headerlink" title="问题的解决"></a>问题的解决</h2><p>原因找到了，磁盘阵列通过 RJ45 的网线加上一个不给力的交换机连接服务器，导致生产者的数据永远无法满足消费者数据。</p>
+<p>当然解决办法也很明了了，换更给力的网线和交换机。磁盘阵列不用换，我查看了磁盘阵列的说明书，发现其支持光纤出口。经过调研，给博士建议买光纤 + 光纤网卡，服务器插上光纤网卡后通过光纤直连磁盘阵列。不用走 RJ45网线 + 交换机。</p>
+<p>博士采纳了我的建议，几个星期之后，实验室来了几个师傅安装光纤以及光纤网卡，第一次见到光纤网卡，心理有些小激动。一共装了 2 个光纤网卡，这些网卡价格不菲一共要 1.3W RMB。下面是安装光纤的实况。</p>
+<p><img src="/images/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202018-06-27%20%E4%B8%8B%E5%8D%885.01.29.png" alt="屏幕快照 2018-06-27 下午5.01.29"></p>
+<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><p>最普通光纤的速度为万兆每秒，远远超过磁盘 IO 速度。安装完光纤的后发现，之前每秒只能处理 7 - 8 个APK，改为光纤直连 + 多线程之后每秒能够处理  100 个 APK，速度提升了 10 多倍。之前预估 1 年左右才能跑完数据，现在预估只要 1 个月左右就能搞定。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过这次优化让我学到了很多，也让我有了几点感悟</p>
+<ul>
+<li>在处理故障、优化性能的时候，优先确定瓶颈，而不是无脑堆线程、堆配置、改架构</li>
+<li>应当熟悉一些常见硬件的基本参数：比如 RJ45 网线的速度、磁盘速度之类的</li>
+<li>有时候瓶颈可能不光发生在软件层面，也有可能在硬件层面</li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/14/海量数据处理问题-4-位图/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1614,7 +1816,7 @@
         
           
             <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>现在互联网圈大家谈论的最热的几个话题除了机器学习、深度学习以外，必然非比特币、区块链莫属了。</p>
-<p>今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别人的 = = …)，github上也有很多开源的区块链实现，有的甚至号称几百行 Python 代码实现自己的区xziil905–p\块链，所以当时就没有深挖下去。今天王博从技术的角度对区块链、比特币进行了分析让我受益颇多。</p>
+<p>今天讨论班，王博分享了做了一个区块链技术综述（overview），让我对区块链有了更多的了解，其实去年中旬也有了解过区块链和比特币的相关知识，甚至想自己投资一波，但是我发现区块链这一块的热点更多的是商业模式、营销模式等非技术热点，技术上要实现一个区块链或者发布新的数字货币并不难(好吧，这句话我也看得别人的 = = …)，github上也有很多开源的区块链实现，有的甚至号称几百行 Python 代码实现自己的区块链，所以当时就没有深挖下去。今天王博从技术的角度对区块链、比特币进行了分析让我受益颇多。</p>
 <p>要了解区块链，就要首先了解区块链使用的核心技术、核心思想，而密码学正式区块链技术的重要基础。这篇文章将只介绍区块链的密码学基础，不会过多的涉及区块链的具体流程、具体实施策略等。</p>
 <h2 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h2><p>本文将介绍如下几个区块链中使用到的密码学技术</p>
 <ul>
@@ -1624,7 +1826,25 @@
 <li>数字证书技术</li>
 <li>零知识证明</li>
 </ul>
-<h2 id="哈希技术"><a href="#哈希技术" class="headerlink" title="哈希技术"></a>哈希技术</h2>
+<h2 id="哈希技术"><a href="#哈希技术" class="headerlink" title="哈希技术"></a>哈希技术</h2><h4 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h4><p>哈希技术也叫信息摘要技术，这里直接给出维基百科的定义</p>
+<blockquote>
+<p>A cryptographic hash function is a special class of hash function that has certain properties which make it suitable for use in cryptography. It is a mathematical algorithm that maps data of arbitrary size to a bit string of a fixed size (a hash) and is designed to be a one-way function, that is, a function which is infeasible to invert.</p>
+</blockquote>
+<p>简单来说，密码学中 hash 函数用于把一堆数据映射成若干个比特，并且无法恢复，也就是说 hash 函数式不可逆的。如下图所示。</p>
+<p><img src="/images/15224215103261.jpg" alt=""></p>
+<h4 id="性质"><a href="#性质" class="headerlink" title="性质"></a>性质</h4><ul>
+<li>确定性。相同的信息，只能产相同的信息摘要。</li>
+<li>速度快。产生信息摘要必须足够快。</li>
+<li>不可逆。除非采用 Hash 碰撞技术</li>
+<li>雪崩性。对原文的微小改动都会使信息摘要产生巨大变化</li>
+</ul>
+<h5 id="常见的哈希函数"><a href="#常见的哈希函数" class="headerlink" title="常见的哈希函数"></a>常见的哈希函数</h5><ul>
+<li>SHA 系列</li>
+</ul>
+<ul>
+<li>MD5 系列</li>
+</ul>
+
           
         
       
@@ -1800,212 +2020,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/05/Java-IO-与装饰器模式、适配器模式/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="ymjkMaster">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="杨明的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/02/05/Java-IO-与装饰器模式、适配器模式/" itemprop="url">Java IO 与装饰器模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-05T16:28:55+08:00">
-                2018-02-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index">
-                    <span itemprop="name">Java</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/设计模式/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/设计模式/Java-IO/" itemprop="url" rel="index">
-                    <span itemprop="name">Java IO</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前面我们说过，传统的 Java IO 框架大量的使用了装饰器模式（适配器模式顺带复习），比较有代表性的类就是 BufferedInputStream、BufferedOutputStream。 下面是其典型的用法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">File fout = <span class="keyword">new</span> File(<span class="string">"BufferedOutputStream.txt"</span>);</span><br><span class="line">BufferedOutputStream bos = <span class="keyword">new</span> BufferedOutputStream(<span class="keyword">new</span> FileOutputStream(fout););</span><br><span class="line">bos.write(<span class="string">"Hello World"</span>.getBytes());</span><br></pre></td></tr></table></figure>
-<p>那么为什么设计一个<strong>缓冲</strong>功能要使用<strong>装饰器模式</strong>，而不是直接继承，那样不是跟方便么。使用装饰器模式有什么好处呢？</p>
-<h2 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h2><p>带着以上为题，本文将谈以下几点</p>
-<ul>
-<li>什么是装饰器模式</li>
-<li>Java IO 中的装饰器模式</li>
-<li>使用装饰器模式的优缺点</li>
-<li>适配器模式</li>
-<li>参考资料</li>
-</ul>
-<h2 id="什么是装饰器模式"><a href="#什么是装饰器模式" class="headerlink" title="什么是装饰器模式"></a>什么是装饰器模式</h2><p>其定义维基百科这样介绍的</p>
-<blockquote>
-<p>In object-oriented programming, the decorator pattern is a design pattern that allows behavior to be added to an individual object, either statically or dynamically, without affecting the behavior of other objects from the same class</p>
-</blockquote>
-<p>上面只说到了装饰器模式的功能，下面给出 UML 图，弄清其实现原理。</p>
-<p><img src="/images/15178219534836.jpg" alt=""></p>
-<p>具体代码直接给出我之前文章的代码，其含义可以参看之前的文章。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 抽象组件：煎饼</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">JianBing</span> </span>&#123;</span><br><span class="line">  <span class="function">JianBing <span class="title">make</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 具体组件：杨氏煎饼</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">YangShiJianBing</span> <span class="keyword">implements</span> <span class="title">JianBing</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> JianBing <span class="title">make</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">"杨式煎饼"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 抽象装饰器：调料</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> AbstractClass TiaoLiao implements JianBing&#123;</span><br><span class="line">  <span class="keyword">protected</span> JianBing jianbing;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">TiaoLiao</span><span class="params">(JianBing jianbing)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.jianbing = jianbing;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> JianBing <span class="title">make</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    jianbing.make();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 具体装饰器：加孜然</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AddZiRan</span> <span class="keyword">extends</span> <span class="title">TiaoLiao</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AddZiRan</span> <span class="params">(JianBing jianbing)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> JianBing <span class="title">make</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    jianbing.make();</span><br><span class="line">    addZiRan(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addZiRan</span><span class="params">(JianBing jianbing)</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">" 加孜然 "</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 具体装饰器：加辣</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AddPepper</span> <span class="keyword">extends</span> <span class="title">TiaoLiao</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AddPepper</span> <span class="params">(JianBing jianbing)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> JianBing <span class="title">make</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    jianbing.make();</span><br><span class="line">    addPepper(jianbing);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addPepper</span><span class="params">(JianBing jianbing)</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">" 加辣 "</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 客户</span></span><br><span class="line"><span class="comment"> **/</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Client</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 煎饼 加孜然 加辣</span></span><br><span class="line">    JianBing jianbing = <span class="keyword">new</span> YangShiJianBing();</span><br><span class="line">    JianBing jianBingAddPepper = <span class="keyword">new</span> AddPepper(jianbing);</span><br><span class="line">    JianBing jianBingAddZiRan = <span class="keyword">new</span> AddZiRan(jianBingAddPepper);</span><br><span class="line">    jianBingAddZiRan.make();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="Java-IO-中的装饰器模式"><a href="#Java-IO-中的装饰器模式" class="headerlink" title="Java IO 中的装饰器模式"></a>Java IO 中的装饰器模式</h2><p>那么传统 Java IO 框架是怎么运用装饰器模式的呢？先看类图。</p>
-<p><img src="/images/15178296561463.jpg" alt=""></p>
-<p>其中 BufferedInputStream、DataInputStream等都是与装饰器相关的代码，对应类图中的的“ConcreteDecorator”，而 FilterInputStream 对应 UML 图中的“Decorator”，InputStream对应”Component“，这样就应该明白他们的关系了。</p>
-<h4 id="InputStream-gt-Component"><a href="#InputStream-gt-Component" class="headerlink" title="InputStream -&gt; Component"></a>InputStream -&gt; Component</h4><p>InputStream 对应 Component，是一个抽象类并实现了 closable 接口</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">InputStream</span> <span class="keyword">implements</span> <span class="title">Closeable</span> </span>&#123;</span><br><span class="line"><span class="comment">// read、mark、close等方法</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="FilteredInputStream-gt-Decorator"><a href="#FilteredInputStream-gt-Decorator" class="headerlink" title="FilteredInputStream -&gt; Decorator"></a>FilteredInputStream -&gt; Decorator</h4><p>FilteredInputStream 对应<code>抽象装饰器</code>，继承了<code>Component</code>（即 InputStream ），其源码如下，可以看到，<code>抽象装饰器</code>持有了一个<code>抽象组件</code>，并且把相关实现委托给了<code>抽象组件 Component</code>。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FilterInputStream</span> <span class="keyword">extends</span> <span class="title">InputStream</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">volatile</span> InputStream in;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="title">FilterInputStream</span><span class="params">(InputStream in)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.in = in;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> in.read();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">(<span class="keyword">byte</span> b[])</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> read(b, <span class="number">0</span>, b.length);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">(<span class="keyword">byte</span> b[], <span class="keyword">int</span> off, <span class="keyword">int</span> len)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> in.read(b, off, len);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">skip</span><span class="params">(<span class="keyword">long</span> n)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> in.skip(n);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">available</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> in.available();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        in.close();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">mark</span><span class="params">(<span class="keyword">int</span> readlimit)</span> </span>&#123;</span><br><span class="line">        in.mark(readlimit);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">reset</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        in.reset();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">markSupported</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> in.markSupported();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="BufferedInputStream-gt-ConcreteDecorator"><a href="#BufferedInputStream-gt-ConcreteDecorator" class="headerlink" title="BufferedInputStream -&gt; ConcreteDecorator"></a>BufferedInputStream -&gt; ConcreteDecorator</h4><p>BuffredInputStream 对应 UML 图中的<code>具体装饰器</code>，<em>动态添加功能</em>就是通过<code>具体装饰器</code>实现的。拿<strong>部分源码</strong>举例。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BufferedInputStream</span> <span class="keyword">extends</span> <span class="title">FilterInputStream</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> DEFAULT_BUFFER_SIZE = <span class="number">8192</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> MAX_BUFFER_SIZE = Integer.MAX_VALUE - <span class="number">8</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">volatile</span> <span class="keyword">byte</span> buf[];</span><br><span class="line">    </span><br><span class="line">    ......</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BufferedInputStream</span><span class="params">(InputStream in)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>(in, DEFAULT_BUFFER_SIZE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BufferedInputStream</span><span class="params">(InputStream in, <span class="keyword">int</span> size)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(in);</span><br><span class="line">        <span class="keyword">if</span> (size &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"Buffer size &lt;= 0"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        buf = <span class="keyword">new</span> <span class="keyword">byte</span>[size];</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    ......</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 带缓冲的read()方法。</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">int</span> <span class="title">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (pos &gt;= count) &#123;</span><br><span class="line">            fill();</span><br><span class="line">            <span class="keyword">if</span> (pos &gt;= count)</span><br><span class="line">                <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> getBufIfOpen()[pos++] &amp; <span class="number">0xff</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ......</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到，BufferedInputStream 继承了 FilteredInputStream 之后，实现了带缓冲的 read()功能，其构造函数只需要传入 InputStream 的实现类即可。</p>
-<p>也就是说，我们可以为任何一个 InputStream 的实现类提供带缓冲的 read() 等方法，很棒！这就体现了装饰器模式在不改动源码的情况下动态添加功能的思想。</p>
-<h4 id="其他具体装饰器"><a href="#其他具体装饰器" class="headerlink" title="其他具体装饰器"></a>其他具体装饰器</h4><p>当然实现了 FilteredInputStream 的类有很多，他们都和 BufferedInputStream 类似，提供各种动态添加功能的方法，比如DataInputStream、PushbackInputStream。</p>
-<h2 id="使用装饰器模式的优缺点"><a href="#使用装饰器模式的优缺点" class="headerlink" title="使用装饰器模式的优缺点"></a>使用装饰器模式的优缺点</h2><ul>
-<li><p>优点</p>
-<p>装饰器模式和继承都能拓展对象的功能，<strong>但是装饰器模式有着更大的灵活性</strong>。通过使用不同的具体装饰类以及这些装饰类的排列组合，可以创造出很多不同行为的组合。可以使用多个具体装饰类来装饰同一对象，得到功能更为强大的对象。</p>
-</li>
-<li><p>缺点</p>
-<p>这种比继承更加灵活机动的特性，也同时意味着装饰模式比继承更加易于出错，排错也很困难，对于多次装饰的对象，调试时寻找错误可能需要逐级排查，较为烦琐。</p>
-</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
-<li><a href="https://en.wikipedia.org/wiki/Decorator_pattern" target="_blank" rel="noopener">Decorator pattern - wikipedia</a></li>
-<li><a href="https://segmentfault.com/a/1190000004255439" target="_blank" rel="noopener">Java IO : 流，以及装饰器模式在其上的运用</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2056,7 +2070,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-count">24</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -2067,7 +2081,7 @@
             
             <div class="site-state-item site-state-categories">
               
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">19</span>
                 <span class="site-state-item-name">分类</span>
               
             </div>
@@ -2078,7 +2092,7 @@
             
             <div class="site-state-item site-state-tags">
               
-                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-count">27</span>
                 <span class="site-state-item-name">标签</span>
               
             </div>

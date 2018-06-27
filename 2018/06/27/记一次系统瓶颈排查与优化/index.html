@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="性能优化,故障排查," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="背景事情源于一个十分坑爹的 BUG，实验室下载了百万计的 APK 并解析存入数据库，存入数据库的其中一项就是 APK 的 MD5 值。 这没啥大不了的，直到有一天突然发现，前人写的 APK 解析工具类在算 MD5 值的时候少取了 1 位，本来存入数据的应该是一个 128 字节的字符串，但是实际存入的是一个 127 位的字符串。 所以…实验室博士们经过商讨之后决定，对 200TB 的 APK 进行重">
+<meta name="keywords" content="性能优化,故障排查">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一次系统瓶颈排查与优化">
+<meta property="og:url" content="http://yoursite.com/2018/06/27/记一次系统瓶颈排查与优化/index.html">
+<meta property="og:site_name" content="杨明的博客">
+<meta property="og:description" content="背景事情源于一个十分坑爹的 BUG，实验室下载了百万计的 APK 并解析存入数据库，存入数据库的其中一项就是 APK 的 MD5 值。 这没啥大不了的，直到有一天突然发现，前人写的 APK 解析工具类在算 MD5 值的时候少取了 1 位，本来存入数据的应该是一个 128 字节的字符串，但是实际存入的是一个 127 位的字符串。 所以…实验室博士们经过商讨之后决定，对 200TB 的 APK 进行重">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202018-06-27%20%E4%B8%8B%E5%8D%885.01.29.png">
+<meta property="og:updated_time" content="2018-06-27T09:13:31.346Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="记一次系统瓶颈排查与优化">
+<meta name="twitter:description" content="背景事情源于一个十分坑爹的 BUG，实验室下载了百万计的 APK 并解析存入数据库，存入数据库的其中一项就是 APK 的 MD5 值。 这没啥大不了的，直到有一天突然发现，前人写的 APK 解析工具类在算 MD5 值的时候少取了 1 位，本来存入数据的应该是一个 128 字节的字符串，但是实际存入的是一个 127 位的字符串。 所以…实验室博士们经过商讨之后决定，对 200TB 的 APK 进行重">
+<meta name="twitter:image" content="http://yoursite.com/images/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202018-06-27%20%E4%B8%8B%E5%8D%885.01.29.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/06/27/记一次系统瓶颈排查与优化/"/>
+
+
+
+
+
+  <title>记一次系统瓶颈排查与优化 | 杨明的博客</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">杨明的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/27/记一次系统瓶颈排查与优化/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">记一次系统瓶颈排查与优化</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-27T16:04:06+08:00">
+                2018-06-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/性能优化/" itemprop="url" rel="index">
+                    <span itemprop="name">性能优化</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/性能优化/故障排查/" itemprop="url" rel="index">
+                    <span itemprop="name">故障排查</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>事情源于一个十分坑爹的 BUG，实验室下载了百万计的 APK 并解析存入数据库，存入数据库的其中一项就是 APK 的 MD5 值。</p>
+<p>这没啥大不了的，直到有一天突然发现，前人写的 APK 解析工具类在算 MD5 值的时候少取了 1 位，本来存入数据的应该是一个 128 字节的字符串，但是实际存入的是一个 127 位的字符串。</p>
+<p>所以…实验室博士们经过商讨之后决定，对 200TB 的 APK 进行重新解析，这酸爽…</p>
+<h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>重新解析过程很简单</p>
+<ol>
+<li>从磁盘阵列读数据</li>
+<li>读完一个 APK 后，解析</li>
+<li>然后重新 UPDATE 数据库</li>
+</ol>
+<p>这个程序是师弟写的。写的时候搞了几十个测试 APK 放到本地，然后写程序。写出来之后发现一个问题，就是很慢，一分钟最多处理 10 个左右 APK，不符合常理。师弟也尝试了多种办法。</p>
+<h4 id="师弟的第一个方法：多线程"><a href="#师弟的第一个方法：多线程" class="headerlink" title="师弟的第一个方法：多线程"></a>师弟的第一个方法：多线程</h4><p>在本地用了一个固定的 10 个线程的线程池，尝试用多线程处理，结果还是一分钟处理 10 个左右。照这个速度下去一年都跑不完。师弟百思不得其解，于是师弟有了第二个想法。</p>
+<h4 id="师弟的第二个方法：把程序放到服务器跑"><a href="#师弟的第二个方法：把程序放到服务器跑" class="headerlink" title="师弟的第二个方法：把程序放到服务器跑"></a>师弟的第二个方法：把程序放到服务器跑</h4><p>实验室的服务器配置极高，内存有 200+G、CPU 核心数 64 核，4 路 GTX 1080Ti。平时一般用来跑深度学习等大型任务。放到服务器跑了之后，结果更奇葩…上了服务器处理速度不仅没有提高，反而变慢了，变成了一分钟处理 8 个左右…</p>
+<p>师弟百思不得其解，最后找到了我。</p>
+<h2 id="瓶颈定位"><a href="#瓶颈定位" class="headerlink" title="瓶颈定位"></a>瓶颈定位</h2><p>师弟找到我之后，我首先怀疑是不是他的多线程代码部分是不是有问题，所以首先看了一下他写的代码，发现多线程写的没啥大毛病。一开始我也疑惑了一下，但是事实摆在面前：</p>
+<ol>
+<li>程序处理速度异常慢，多线程不解决，肯定某个地方出问题了</li>
+<li>放到服务器上跑，速度不增反降。</li>
+</ol>
+<p>思考一下后，我实现了我的解决方案</p>
+<h4 id="使用-htop、iostat-命令初步观察"><a href="#使用-htop、iostat-命令初步观察" class="headerlink" title="使用 htop、iostat 命令初步观察"></a>使用 htop、iostat 命令初步观察</h4><p>遇到这种性能问题，我认为应该首先定位故障、瓶颈出在哪儿，而不是一味的祭出多线程、对配置之类的想法。所以我让师弟在运行程序的时候用 htop、iostat 命令，观察一下程序资源占用状况。</p>
+<p>观察到的结果是：CPU 占用率不到 150 %，磁盘占用率比较高。这时初步有了推断：程序的瓶颈不在 CPU，而在于磁盘 IO，这就解释了为什么多线程起不了作用。</p>
+<h4 id="编写测试类验证想法"><a href="#编写测试类验证想法" class="headerlink" title="编写测试类验证想法"></a>编写测试类验证想法</h4><p>为了验证我的想法，我再师弟写的程序里搞了几个计时器，对多文件操作、解析操作和写回数据库操作做了计时。结果如下</p>
+<ul>
+<li>读文件操作：4s - 10s 不等</li>
+<li>解析操作：几十毫秒</li>
+<li>写会数据库：几十毫秒</li>
+</ul>
+<p>果然，多线程不起作用的原因找到了，程序瓶颈在磁盘 IO 那里，不管你开多少个线程，磁盘的读取速度总是有限的，这就导致程序的处理速度和 IO 的性能成正比，因此要优化程序应该从提高磁盘 IO 入手而不是一味使用多线程。</p>
+<h4 id="为什么上了服务器跑反而变慢了"><a href="#为什么上了服务器跑反而变慢了" class="headerlink" title="为什么上了服务器跑反而变慢了"></a>为什么上了服务器跑反而变慢了</h4><p>但是还有一个问题没有解决，为啥相同的程序放到了服务器跑变得更慢了。我仔细看了师弟的代码，发现在服务器上跑的时候，多了一步从分布式文件系统下载 APK 文件的操作。</p>
+<p>本地跑的流程为：读取APK -&gt; 算哈希 -&gt; 写回数据库（因为师弟已经事先下了几十个测试 APK，所以不用下载）<br>服务器上跑的流程为：从分布式文件系统下载 -&gt; 读取APK -&gt; 算哈希 -&gt; 写回数据库</p>
+<p>这就导致从服务器上跑速度反而更慢。</p>
+<h4 id="真正的瓶颈定位：交换机-RJ45-网线"><a href="#真正的瓶颈定位：交换机-RJ45-网线" class="headerlink" title="真正的瓶颈定位：交换机 + RJ45 网线"></a>真正的瓶颈定位：交换机 + RJ45 网线</h4><p>理论上跑的流程为：从分布式文件系统下载 -&gt; 读取APK -&gt; 算哈希 -&gt; 写回数据库。这几个步骤里面，最耗时的是哪个呢？</p>
+<p>我心中的答案是：下载，其次是从磁盘读取。因为一款普通机械硬盘的读取速度通常可以达到 几百兆每秒，而下载的时候，如果下载走普通网线，其速度极限是 1000Gb/s 约等于 125MB/s。</p>
+<p>为了验证想法。我特地跑到了机房，观察服务器与磁盘阵列连接方式。观察到如下情况</p>
+<ul>
+<li>实验室磁盘阵列使用的硬盘架通过 RJ45 网线出来。</li>
+<li>RJ45 网线在连到交换机上</li>
+</ul>
+<p>于是就验证了我的想法，RJ45 网线的极限才 1000Gb/s 约等于 125MB/s，所以不管怎么堆服务器配置、搞多线程都是没用的。因为元数据获取的速度极限就是 125MB/s，假如一个 APK 平均大小为 10MB，那么每秒最多能够处理的极限就是：12 个。</p>
+<h2 id="问题的解决"><a href="#问题的解决" class="headerlink" title="问题的解决"></a>问题的解决</h2><p>原因找到了，磁盘阵列通过 RJ45 的网线加上一个不给力的交换机连接服务器，导致生产者的数据永远无法满足消费者数据。</p>
+<p>当然解决办法也很明了了，换更给力的网线和交换机。磁盘阵列不用换，我查看了磁盘阵列的说明书，发现其支持光纤出口。经过调研，给博士建议买光纤 + 光纤网卡，服务器插上光纤网卡后通过光纤直连磁盘阵列。不用走 RJ45网线 + 交换机。</p>
+<p>博士采纳了我的建议，几个星期之后，实验室来了几个师傅安装光纤以及光纤网卡，第一次见到光纤网卡，心理有些小激动。一共装了 2 个光纤网卡，这些网卡价格不菲一共要 1.3W RMB。下面是安装光纤的实况。</p>
+<p><img src="/images/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202018-06-27%20%E4%B8%8B%E5%8D%885.01.29.png" alt="屏幕快照 2018-06-27 下午5.01.29"></p>
+<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><p>最普通光纤的速度为万兆每秒，远远超过磁盘 IO 速度。安装完光纤的后发现，之前每秒只能处理 7 - 8 个APK，改为光纤直连 + 多线程之后每秒能够处理  100 个 APK，速度提升了 10 多倍。之前预估 1 年左右才能跑完数据，现在预估只要 1 个月左右就能搞定。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过这次优化让我学到了很多，也让我有了几点感悟</p>
+<ul>
+<li>在处理故障、优化性能的时候，优先确定瓶颈，而不是无脑堆线程、堆配置、改架构</li>
+<li>应当熟悉一些常见硬件的基本参数：比如 RJ45 网线的速度、磁盘速度之类的</li>
+<li>有时候瓶颈可能不光发生在软件层面，也有可能在硬件层面</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/性能优化/" rel="tag"># 性能优化</a>
+          
+            <a href="/tags/故障排查/" rel="tag"># 故障排查</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/14/海量数据处理问题-4-位图/" rel="next" title="海量数据处理问题(4) - 位图">
+                <i class="fa fa-chevron-left"></i> 海量数据处理问题(4) - 位图
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="ymjkMaster" />
+          <p class="site-author-name" itemprop="name">ymjkMaster</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#起因"><span class="nav-number">2.</span> <span class="nav-text">起因</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#师弟的第一个方法：多线程"><span class="nav-number">2.0.1.</span> <span class="nav-text">师弟的第一个方法：多线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#师弟的第二个方法：把程序放到服务器跑"><span class="nav-number">2.0.2.</span> <span class="nav-text">师弟的第二个方法：把程序放到服务器跑</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#瓶颈定位"><span class="nav-number">3.</span> <span class="nav-text">瓶颈定位</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用-htop、iostat-命令初步观察"><span class="nav-number">3.0.1.</span> <span class="nav-text">使用 htop、iostat 命令初步观察</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编写测试类验证想法"><span class="nav-number">3.0.2.</span> <span class="nav-text">编写测试类验证想法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么上了服务器跑反而变慢了"><span class="nav-number">3.0.3.</span> <span class="nav-text">为什么上了服务器跑反而变慢了</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#真正的瓶颈定位：交换机-RJ45-网线"><span class="nav-number">3.0.4.</span> <span class="nav-text">真正的瓶颈定位：交换机 + RJ45 网线</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题的解决"><span class="nav-number">4.</span> <span class="nav-text">问题的解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#效果"><span class="nav-number">5.</span> <span class="nav-text">效果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ymjkMaster</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
