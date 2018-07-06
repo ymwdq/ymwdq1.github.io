@@ -260,6 +260,178 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/" itemprop="url">记一次Lucene中文分词器SmartChineseAnalyzer的源码探究</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-05T20:50:34+08:00">
+                2017-12-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/杂谈/" itemprop="url" rel="index">
+                    <span itemprop="name">杂谈</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/杂谈/Lucene/" itemprop="url" rel="index">
+                    <span itemprop="name">Lucene</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>无聊逛北邮人Java技术版，偶然看到了一个Lucene的问题。心里顿时一惊，相比火热的人工智能版，Java版终于有人提问题了，而且还是关于Lucene的!!!<br>问题如下<br><img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/problem.jpg"></p>
+<h2 id="初步想法"><a href="#初步想法" class="headerlink" title="初步想法"></a>初步想法</h2><p>看到这个问题我首先想到的是，会不是因为SmartChineseAnalyzer使用了停用词表，然后下划线这种特殊符号被直接过滤了，如果是的话，把默认停用词表关了不就得了，题主不会连API文档都懒得看吧(事实证明原因并没有想像中的简单)…</p>
+<p>为了证明我的想法，我特意找到了Lucene7.1 SmartChineseAnalyzer的官方文档…然后看到了</p>
+<img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/api.jpg">
+<p>哈哈，果然用了停用词表，果断写代码验证，并且把默认停用词表关了，看看效果…</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    StringReader reader = new StringReader(&quot;人生苦短_我用Python&quot;);</span><br><span class="line">    SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer(false);</span><br><span class="line">    try &#123;</span><br><span class="line">        AnalyzerUtil.displayTokens(analyzer.tokenStream(&quot;content&quot;, reader));</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结果如下</p>
+<img src="/2017/12/05/记一次Lucene中文分词器SmartChineseAnalyzer的源码探究/res1.jpg" class="slug">
+<p>可以看到，下划线的当做逗号了…初步想法失败…</p>
+<h2 id="二次尝试"><a href="#二次尝试" class="headerlink" title="二次尝试"></a>二次尝试</h2><p>嗯…居然失败了…看来把问题想简单了，到那时哥好歹也是看过《Lucene in Action》的人，对Lucene的Analyzer基本原理算是略知一二，是时候展（zhuang）现（bi）真正的实力了。</p>
+<p>我们知道，Lucene的分析器一般会采用了一套分析链的机制进行分析，一般先经过reader读取字符串，然后经过tokenizer进行分词（分成一个个token），然后经过若干TokenFilter进行过滤（这里的过滤不一定要删减token，比如同义词扩展就可以使用filter进行）。</p>
+<p>那么问题到底出在哪儿呢…</p>
+<p>google了一大堆资料，发现没人提相关问题，而且版本都很老。没办法，只能祭出源码查看大法了…</p>
+<h2 id="源码探究之旅"><a href="#源码探究之旅" class="headerlink" title="源码探究之旅"></a>源码探究之旅</h2><p>要看源码其实我是拒绝的，因为不知道其原理，而且我自己查看源码的经验不是特别丰富…我一直认为，要查看别人写的代码，最好先知道人家代码大体的实现思路，了解关键的API，然后由简到繁。而不是一头扎进去，死扣细节，最后淹没在代码的海洋里。</p>
+<p>为了了解SmartChineseAnalyzer的大概实现原理，我找到了其官方文档的描述。</p>
+<blockquote><p>SmartChineseAnalyzer is an analyzer for Chinese or mixed Chinese-English text. The analyzer uses probabilistic knowledge to find the optimal word segmentation for Simplified Chinese text. The text is first broken into sentences, then each sentence is segmented into words.</p>
+<p>Segmentation is based upon the Hidden Markov Model. A large training corpus was used to calculate Chinese word frequency probability.</p>
+<p>This analyzer requires a dictionary to provide statistical data. SmartChineseAnalyzer has an included dictionary out-of-box.</p>
+<footer><strong>https://lucene.apache.org/core/7_1_0/analyzers-smartcn/org/apache/lucene/analysis/cn/smart/SmartChineseAnalyzer.html</strong></footer></blockquote>
+<p>其实官方描述也写得比较粗略，google了一些资料，大多都将算法原理，代码解析很少。算了，先大概看看源码吧。。。</p>
+<h2 id="未完待续"><a href="#未完待续" class="headerlink" title="未完待续"></a>未完待续</h2>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/25/设计模式-装饰器模式/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1224,7 +1396,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-count">26</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
