@@ -103,7 +103,7 @@
 <meta property="og:description" content="一、背景这个问题是在知乎上看到的。确实，如果我们打开 Chrome 标签，那么任务管理器确实能看到多了一个进程。不光是 Chrome 其实 Safari 也有这样的情况。下面是我的 MacbookPro 上 Safari 大概新标签页的情况。  二、问题分析首先理论上可以确定仅仅从实现“浏览网页”的角度，使用多线程是可以满足要求的。那么为什么要用多进程呢？我们可以这么想，既然“浏览网页”可以用多线">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/15308757389193.jpg">
-<meta property="og:updated_time" content="2018-07-06T12:00:24.871Z">
+<meta property="og:updated_time" content="2018-07-06T12:03:40.721Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="为什么Chrome要使用多进程而不是多线程">
 <meta name="twitter:description" content="一、背景这个问题是在知乎上看到的。确实，如果我们打开 Chrome 标签，那么任务管理器确实能看到多了一个进程。不光是 Chrome 其实 Safari 也有这样的情况。下面是我的 MacbookPro 上 Safari 大概新标签页的情况。  二、问题分析首先理论上可以确定仅仅从实现“浏览网页”的角度，使用多线程是可以满足要求的。那么为什么要用多进程呢？我们可以这么想，既然“浏览网页”可以用多线">
@@ -361,7 +361,7 @@
 <blockquote>
 <p>On top of this, the parts of the browser that render HTML, JavaScript, and CSS have become extraordinarily complex over time.  These rendering engines frequently have bugs as they continue to evolve, and some of these bugs may cause the rendering engine to occasionally crash.  Also, rendering engines routinely face untrusted and even malicious code from the web, which may try to exploit these bugs to install malware on your computer.</p>
 </blockquote>
-<h4 id="稳定性"><a href="#稳定性" class="headerlink" title="稳定性"></a>稳定性</h4><p>这里稳定性指的：程序不会崩，我们知道 HTML、JS、CSS 是比较复杂的语言也会有各种 BUG 为了不让，放到不同的进程中就可以保证一个标签出现严重 BUG 的时候，不至于导致整个程序崩掉。</p>
+<h4 id="稳定性"><a href="#稳定性" class="headerlink" title="稳定性"></a>稳定性</h4><p>这里稳定性指的：程序不会崩，我们知道 HTML、JS、CSS 是比较复杂的语言也会有各种 BUG 如果采用多线程可能会出现一个线程导致其他所有线程等崩溃的情况。放到不同的进程中就可以保证一个标签出现严重 BUG 的时候，不至于导致整个程序崩掉。</p>
 <h4 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h4><p>这里安全性指：提高对恶意代码的防御能力。如果采用多线程架构里面，由于线程共享地址空间，有的恶意网页可能会通过一些技术对其他线程形成威胁。</p>
 <h2 id="进程与线程"><a href="#进程与线程" class="headerlink" title="进程与线程"></a>进程与线程</h2><p>那么为什么进程就比线程稳定、安全呢？这就得说到进程和线程的区别了。</p>
 <ul>

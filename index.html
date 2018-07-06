@@ -360,7 +360,7 @@
 <blockquote>
 <p>On top of this, the parts of the browser that render HTML, JavaScript, and CSS have become extraordinarily complex over time.  These rendering engines frequently have bugs as they continue to evolve, and some of these bugs may cause the rendering engine to occasionally crash.  Also, rendering engines routinely face untrusted and even malicious code from the web, which may try to exploit these bugs to install malware on your computer.</p>
 </blockquote>
-<h4 id="稳定性"><a href="#稳定性" class="headerlink" title="稳定性"></a>稳定性</h4><p>这里稳定性指的：程序不会崩，我们知道 HTML、JS、CSS 是比较复杂的语言也会有各种 BUG 为了不让，放到不同的进程中就可以保证一个标签出现严重 BUG 的时候，不至于导致整个程序崩掉。</p>
+<h4 id="稳定性"><a href="#稳定性" class="headerlink" title="稳定性"></a>稳定性</h4><p>这里稳定性指的：程序不会崩，我们知道 HTML、JS、CSS 是比较复杂的语言也会有各种 BUG 如果采用多线程可能会出现一个线程导致其他所有线程等崩溃的情况。放到不同的进程中就可以保证一个标签出现严重 BUG 的时候，不至于导致整个程序崩掉。</p>
 <h4 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h4><p>这里安全性指：提高对恶意代码的防御能力。如果采用多线程架构里面，由于线程共享地址空间，有的恶意网页可能会通过一些技术对其他线程形成威胁。</p>
 <h2 id="进程与线程"><a href="#进程与线程" class="headerlink" title="进程与线程"></a>进程与线程</h2><p>那么为什么进程就比线程稳定、安全呢？这就得说到进程和线程的区别了。</p>
 <ul>
