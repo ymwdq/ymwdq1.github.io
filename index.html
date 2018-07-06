@@ -260,6 +260,168 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/07/06/Java-中的PermGen与MetaSpace/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="ymjkMaster">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="杨明的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/07/06/Java-中的PermGen与MetaSpace/" itemprop="url">Java 中的 PermGen 与 MetaSpace</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-07-06T15:53:51+08:00">
+                2018-07-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>之前打天池比赛的时候，使用 VisualVM 显示 GC 信息的时候总是可以看到一个叫 MetaSpace 的东西。今天特地搜索了一下，这一查才发现了一个惊人的事实（好吧，是我孤陋寡闻了）：Java 中的永久带 PermGen 在 JDK1.8 中被改成了 MetaSpace，我的天，也就是说《深入理解JVM》可以出第三版了，因为上面讲的又过时了……</p>
+<p><img src="/images/15308639877220.jpg" alt=""></p>
+<h2 id="PermGen-与-MetaSpace"><a href="#PermGen-与-MetaSpace" class="headerlink" title="PermGen 与 MetaSpace"></a>PermGen 与 MetaSpace</h2><p>按照以前的知识。Java 内存可以划分为：堆区、方法区、Java 虚拟机栈、本地方法栈、程序计数器。进一步，堆区可以划分为新生代和老年代，新生代又可以分为 Eden 区和 Survivor 区。而我们说的<strong>永久代主要是在方法区，一般字符串常量会分配到方法区</strong>。</p>
+<p><strong>然而从 JDK 1.8 开始，上面的说法就不成立了。</strong></p>
+<h4 id="方法区与永久代的区别"><a href="#方法区与永久代的区别" class="headerlink" title="方法区与永久代的区别"></a>方法区与永久代的区别</h4><p>两者功能是一样的，不过方法区是 Java 一个虚拟机规范中的概念，而永久代是这个规范的实现。就像接口和实现类的区别一样。</p>
+<h4 id="永久代与-MetaSpace"><a href="#永久代与-MetaSpace" class="headerlink" title="永久代与 MetaSpace"></a>永久代与 MetaSpace</h4><p>元空间的本质和永久代类似，都是对JVM规范中方法区的实现。不过元空间与永久代之间最大的区别在于：元空间并不在虚拟机中，而是使用本地内存。因此，默认情况下，元空间的大小仅受本地内存限制，我们也可以指定元空间的大小。</p>
+<p>-XX:MetaspaceSize，初始空间大小，达到该值就会触发垃圾收集进行类型卸载，同时GC会对该值进行调整：如果释放了大量的空间，就适当降低该值；如果释放了很少的空间，那么在不超过MaxMetaspaceSize时，适当提高该值。<br>-XX:MaxMetaspaceSize，最大空间，默认是没有限制的。</p>
+<p>JDK 1.8 使用 MetaSpace 替换了永久代。并且字符串常量的分配放到了堆上，而不是方法区。<br>这篇做了详细的实验来证明。<br><a href="https://www.cnblogs.com/paddix/p/5309550.html" target="_blank" rel="noopener">Java8 永久代(PermGen)和元空间(Metaspace)</a></p>
+<h2 id="MetaSpace-的好处"><a href="#MetaSpace-的好处" class="headerlink" title="MetaSpace 的好处"></a>MetaSpace 的好处</h2><ul>
+<li>方法区容量扩大，理论上最大值约等于物理内存的值。</li>
+<li>字符串常量不再方法区分配，而是在堆区分配。</li>
+<li>减少了垃圾回收的压力</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>MetaSpace 实现了 JVM 规范中的方法区，并且在 JVM 外部分配内存，扩大了容量。</li>
+<li>像《深入理解JVM》这样的经典书籍虽然讲得很好，但是要注意时效性。一个新技术的出现，相应的书籍出来可能会很晚，这时更应关注官方文档、社区、优秀博客。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="https://dzone.com/articles/permgen-and-metaspace" target="_blank" rel="noopener">PermGen and Metaspace</a></li>
+<li><a href="https://www.cnblogs.com/paddix/p/5309550.html" target="_blank" rel="noopener">Java8 永久代(PermGen)和元空间(Metaspace)</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/27/记一次系统瓶颈排查与优化/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1880,147 +2042,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/06/2017天池中间件性能大赛-经验与教训/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="ymjkMaster">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="杨明的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/02/06/2017天池中间件性能大赛-经验与教训/" itemprop="url">2017天池中间件性能大赛 - 经验与教训</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-06T18:02:54+08:00">
-                2018-02-06
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/杂记/" itemprop="url" rel="index">
-                    <span itemprop="name">杂记</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2071,7 +2092,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-count">25</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
